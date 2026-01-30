@@ -1,0 +1,3614 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Registro de Inspección de Extintores</title>
+    <!-- Incluir jsPDF para exportar a PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <!-- html2canvas para capturar imágenes -->
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 25px;
+            border-bottom: 3px solid #2c3e50;
+            padding-bottom: 20px;
+        }
+        
+        .main-title {
+            font-size: 26px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin: 0;
+            text-transform: uppercase;
+        }
+        
+        .sub-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #3498db;
+            margin: 8px 0 0 0;
+        }
+        
+        h1, h2, h3 {
+            color: #333;
+            margin-top: 0;
+        }
+        
+        h2 {
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .navigation {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding: 15px;
+            background: linear-gradient(135deg, #2c3e50, #4a6491);
+            border-radius: 8px;
+        }
+        
+        .nav-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .nav-btn {
+            background-color: #3498db;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+            min-width: 120px;
+        }
+        
+        .nav-btn:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        
+        .nav-btn.active {
+            background-color: #2ecc71;
+        }
+        
+        .nav-btn.danger {
+            background-color: #e74c3c;
+        }
+        
+        .nav-btn.danger:hover {
+            background-color: #c0392b;
+        }
+        
+        .nav-btn.warning {
+            background-color: #f39c12;
+        }
+        
+        .nav-btn.warning:hover {
+            background-color: #d68910;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        /* Estilos para el inventario */
+        .inventory-section {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .inventory-controls {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .search-box {
+            flex: 1;
+            min-width: 300px;
+        }
+        
+        .search-box input {
+            width: 100%;
+            padding: 10px 15px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        
+        .filters {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        
+        .filters select {
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+        }
+        
+        .inventory-table-container {
+            overflow-x: auto;
+            margin-bottom: 30px;
+        }
+        
+        .inventory-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .inventory-table th {
+            background: linear-gradient(135deg, #2c3e50, #4a6491);
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: bold;
+            position: sticky;
+            top: 0;
+        }
+        
+        .inventory-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .inventory-table tr:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .inventory-table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        
+        .inventory-table tr:nth-child(even):hover {
+            background-color: #f1f1f1;
+        }
+        
+        .status-badge {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        
+        .status-active {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .status-inactive {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .action-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+        
+        .action-btn.view {
+            background-color: #3498db;
+            color: white;
+        }
+        
+        .action-btn.edit {
+            background-color: #f39c12;
+            color: white;
+        }
+        
+        .action-btn.delete {
+            background-color: #e74c3c;
+            color: white;
+        }
+        
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        
+        /* Estilos existentes mejorados */
+        .form-section {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            border-left: 4px solid #3498db;
+        }
+        
+        .form-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .form-group {
+            flex: 1;
+            min-width: 250px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus, select:focus {
+            border-color: #3498db;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+        
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        
+        .checkbox-group label {
+            margin: 0 0 0 10px;
+            font-weight: normal;
+        }
+        
+        input[type="checkbox"] {
+            width: auto;
+            transform: scale(1.2);
+        }
+        
+        .btn-container {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid #eee;
+        }
+        
+        button {
+            background-color: #2ecc71;
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            margin-right: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        button:hover {
+            background-color: #27ae60;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        
+        .secondary-btn {
+            background-color: #95a5a6;
+        }
+        
+        .secondary-btn:hover {
+            background-color: #7f8c8d;
+        }
+        
+        .table-with-image {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        
+        .table-with-image td {
+            vertical-align: top;
+            padding: 15px;
+        }
+        
+        .data-cell {
+            width: 60%;
+        }
+        
+        .image-cell {
+            width: 40%;
+            border-left: 2px solid #eee;
+        }
+        
+        .image-placeholder {
+            border: 2px dashed #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            min-height: 250px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: #f8f9fa;
+        }
+        
+        .image-placeholder img {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 5px;
+            display: none;
+        }
+        
+        .image-placeholder.has-image img {
+            display: block;
+        }
+        
+        .image-placeholder.has-image p {
+            display: none;
+        }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .data-table th, .data-table td {
+            padding: 12px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+        
+        .data-table th {
+            background-color: #f2f2f2;
+            width: 40%;
+            font-weight: 600;
+        }
+        
+        .data-table td {
+            width: 60%;
+            background-color: white;
+        }
+        
+        .status-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+        
+        .status-table td {
+            padding: 15px;
+            border: 1px solid #ddd;
+            font-size: 16px;
+        }
+        
+        .status-table td:first-child {
+            width: 70%;
+            font-weight: 500;
+        }
+        
+        .status-table td:nth-child(2) {
+            width: 30%;
+            text-align: center;
+        }
+        
+        .check-status {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 24px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .check-yes {
+            background-color: #2ecc71;
+            color: white;
+        }
+        
+        .check-no {
+            background-color: #e74c3c;
+            color: white;
+        }
+        
+        /* Estilos para la tabla de agentes */
+        .agents-table-container {
+            overflow-x: auto;
+            margin-bottom: 30px;
+        }
+        
+        .agents-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .agents-table th, .agents-table td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: center;
+            min-width: 40px;
+        }
+        
+        .agents-table th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+            position: sticky;
+            top: 0;
+        }
+        
+        .agents-table .param-label {
+            text-align: left;
+            font-weight: bold;
+            background-color: #f8f9fa;
+            min-width: 250px;
+            position: sticky;
+            left: 0;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .modal-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 15px;
+            margin-top: 25px;
+        }
+        
+        .stats-container {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            flex: 1;
+            min-width: 200px;
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+        }
+        
+        .stat-number {
+            font-size: 36px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        /* Estilos para impresión/PDF */
+        .print-only {
+            display: none;
+        }
+        
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            .print-only {
+                display: block !important;
+            }
+            body {
+                background: white !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            .container {
+                box-shadow: none !important;
+                padding: 10px !important;
+                margin: 0 !important;
+                max-width: none !important;
+            }
+            .status-table td,
+            .data-table td,
+            .agents-table td {
+                padding: 4px !important;
+                font-size: 12px !important;
+            }
+        }
+        
+        /* Estilo específico para checkboxes en PDF */
+        .pdf-checkbox {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 16px;
+            font-weight: bold;
+            font-size: 12px;
+        }
+        
+        .pdf-check-yes {
+            background-color: #2ecc71;
+            color: white;
+        }
+        
+        .pdf-check-no {
+            background-color: #e74c3c;
+            color: white;
+        }
+        
+        .pdf-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+        }
+        
+        .pdf-table th,
+        .pdf-table td {
+            border: 1px solid #ddd;
+            padding: 6px;
+            font-size: 11px;
+        }
+        
+        .pdf-table th {
+            background-color: #2c3e50;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .pdf-header {
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 3px solid #2c3e50;
+            padding-bottom: 15px;
+        }
+        
+        .pdf-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin: 0;
+        }
+        
+        .pdf-subtitle {
+            font-size: 14px;
+            color: #3498db;
+            margin: 5px 0 0 0;
+        }
+        
+        .loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            flex-direction: column;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .sync-notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #2ecc71;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 5px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            z-index: 1001;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: slideIn 0.3s ease;
+        }
+        
+        .sync-notification.error {
+            background: #e74c3c;
+        }
+        
+        .sync-notification.warning {
+            background: #f39c12;
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        .backup-info {
+            background: #f8f9fa;
+            border-left: 4px solid #3498db;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        .backup-info h4 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+        
+        .backup-stats {
+            display: flex;
+            gap: 20px;
+            margin-top: 10px;
+        }
+        
+        .backup-stat {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            background: white;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+        
+        .backup-stat .number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #3498db;
+        }
+        
+        .backup-stat .label {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        /* ============================================== */
+        /* MEDIA QUERIES PARA DISPOSITIVOS MÓVILES */
+        /* ============================================== */
+        
+        @media screen and (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            .container {
+                padding: 15px;
+                border-radius: 5px;
+            }
+            
+            .header {
+                padding-bottom: 15px;
+                margin-bottom: 15px;
+            }
+            
+            .main-title {
+                font-size: 20px;
+            }
+            
+            .sub-title {
+                font-size: 14px;
+            }
+            
+            /* Navegación adaptada para móviles */
+            .navigation {
+                flex-direction: column;
+                padding: 10px;
+                gap: 10px;
+            }
+            
+            .nav-buttons {
+                width: 100%;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            
+            .nav-btn {
+                padding: 8px 12px;
+                min-width: 90px;
+                font-size: 14px;
+                margin: 2px;
+            }
+            
+            /* Inventario - estadísticas */
+            .stats-container {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .stat-card {
+                min-width: 100%;
+            }
+            
+            /* Controles de inventario */
+            .inventory-controls {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .search-box {
+                min-width: 100%;
+            }
+            
+            .filters {
+                width: 100%;
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .filters select {
+                width: 100%;
+            }
+            
+            /* Tablas responsivas */
+            .inventory-table-container,
+            .agents-table-container {
+                overflow-x: auto;
+                font-size: 12px;
+            }
+            
+            .inventory-table th,
+            .inventory-table td {
+                padding: 8px 6px;
+                font-size: 12px;
+            }
+            
+            /* Vista de datos - tabla con imagen */
+            .table-with-image {
+                display: flex;
+                flex-direction: column;
+            }
+            
+            .data-cell,
+            .image-cell {
+                width: 100% !important;
+                border-left: none !important;
+                border-top: 2px solid #eee;
+                padding-top: 20px;
+            }
+            
+            .image-cell {
+                order: -1; /* La imagen primero en móviles */
+            }
+            
+            .data-table th,
+            .data-table td {
+                padding: 8px 6px;
+                font-size: 14px;
+            }
+            
+            .status-table td {
+                padding: 10px 8px;
+                font-size: 14px;
+            }
+            
+            /* Formulario de edición */
+            .form-row {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .form-group {
+                min-width: 100%;
+            }
+            
+            /* Tabla de agentes en móviles - scroll horizontal */
+            .agents-table th,
+            .agents-table td {
+                min-width: 40px;
+                padding: 6px 4px;
+                font-size: 11px;
+            }
+            
+            .agents-table .param-label {
+                min-width: 150px;
+                position: sticky;
+                left: 0;
+                background: #f8f9fa;
+                z-index: 1;
+            }
+            
+            /* Botones de acción más grandes para tactil */
+            .action-buttons {
+                flex-direction: column;
+                gap: 5px;
+            }
+            
+            .action-btn {
+                width: 100%;
+                padding: 8px;
+            }
+            
+            /* Modal más grande en móviles */
+            .modal-content {
+                width: 95%;
+                padding: 20px;
+            }
+            
+            /* Información de respaldo */
+            .backup-stats {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .backup-stat {
+                width: 100%;
+            }
+            
+            /* Botones del formulario */
+            .btn-container {
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .btn-container button {
+                width: 100%;
+                margin: 5px 0;
+            }
+        }
+        
+        @media screen and (max-width: 480px) {
+            .main-title {
+                font-size: 18px;
+            }
+            
+            .sub-title {
+                font-size: 12px;
+            }
+            
+            .nav-btn {
+                font-size: 12px;
+                padding: 6px 8px;
+                min-width: 80px;
+            }
+            
+            /* Tabla de inventario simplificada */
+            .inventory-table th:nth-child(5), /* Tipo */
+            .inventory-table td:nth-child(5),
+            .inventory-table th:nth-child(6), /* Última inspección */
+            .inventory-table td:nth-child(6) {
+                display: none;
+            }
+            
+            .agents-table th:nth-child(n+8), /* Ocultar algunos meses */
+            .agents-table td:nth-child(n+8) {
+                display: none;
+            }
+            
+            .agents-table .param-label {
+                min-width: 120px;
+                font-size: 10px;
+            }
+            
+            /* Menú hamburguesa para móviles */
+            .mobile-menu-toggle {
+                display: block !important;
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                z-index: 1000;
+                background: #3498db;
+                color: white;
+                width: 60px;
+                height: 60px;
+                border-radius: 50%;
+                border: none;
+                font-size: 24px;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            }
+            
+            /* Menú flotante para móviles */
+            .mobile-menu {
+                position: fixed;
+                bottom: 90px;
+                right: 20px;
+                background: white;
+                border-radius: 10px;
+                box-shadow: 0 5px 25px rgba(0,0,0,0.2);
+                z-index: 999;
+                display: none;
+                flex-direction: column;
+                min-width: 200px;
+                overflow: hidden;
+            }
+            
+            .mobile-menu.show {
+                display: flex;
+            }
+            
+            .mobile-menu a {
+                padding: 15px 20px;
+                text-decoration: none;
+                color: #333;
+                border-bottom: 1px solid #eee;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+            
+            .mobile-menu a:last-child {
+                border-bottom: none;
+            }
+            
+            .mobile-menu a:hover {
+                background: #f5f5f5;
+            }
+        }
+        
+        /* Estilos adicionales para mejorar la experiencia táctil */
+        @media (hover: none) and (pointer: coarse) {
+            /* Mejorar toques en dispositivos táctiles */
+            input, select, button, .nav-btn, .action-btn {
+                min-height: 44px; /* Tamaño mínimo para toques */
+            }
+            
+            .checkbox-group label {
+                padding: 10px 0;
+            }
+            
+            /* Aumentar espacio entre elementos táctiles */
+            .form-group {
+                margin-bottom: 20px;
+            }
+            
+            /* Asegurar que los checkboxes sean fáciles de tocar */
+            input[type="checkbox"] {
+                transform: scale(1.5);
+                margin-right: 10px;
+            }
+        }
+        
+        /* Para pantallas muy pequeñas (relojes, etc.) */
+        @media screen and (max-width: 320px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .main-title {
+                font-size: 16px;
+            }
+            
+            .sub-title {
+                font-size: 11px;
+            }
+            
+            .nav-btn {
+                font-size: 11px;
+                padding: 5px 6px;
+                min-width: 70px;
+            }
+            
+            .data-table th,
+            .data-table td {
+                font-size: 12px;
+                padding: 6px 4px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="main-title">REGISTRO DE INSPECCIÓN DE EXTINTORES PORTÁTILES</h1>
+            <h2 class="sub-title">CM SAN JUAN DE DIOS - SJD</h2>
+        </div>
+        
+        <div class="navigation">
+            <div class="nav-buttons">
+                <button class="nav-btn" id="inventoryBtn">📋 Inventario</button>
+                <button class="nav-btn" id="newBtn">➕ Nuevo Extintor</button>
+                <button class="nav-btn" id="viewBtn">👁️ Ver Datos</button>
+                <button class="nav-btn" id="editBtn">✏️ Editar Datos</button>
+            </div>
+            <div class="nav-buttons" id="desktopNavButtons">
+                <button class="nav-btn" id="syncBtn">🔄 Sincronizar</button>
+                <button class="nav-btn" id="exportBtn">📄 Exportar PDF</button>
+                <button class="nav-btn" id="exportAllBtn">📊 Exportar Todo</button>
+            </div>
+        </div>
+        
+        <!-- Información de respaldo -->
+        <div id="backupInfo" class="backup-info" style="display: none;">
+            <h4>💾 Sistema de Respaldo Activo</h4>
+            <p>Los datos se guardan automáticamente en tu navegador. Para compartir con otros usuarios:</p>
+            <div class="backup-stats">
+                <div class="backup-stat">
+                    <div class="number" id="backupCount">0</div>
+                    <div class="label">Extintores Guardados</div>
+                </div>
+                <div class="backup-stat">
+                    <div class="number" id="backupDate">-</div>
+                    <div class="label">Último Guardado</div>
+                </div>
+                <div class="backup-stat">
+                    <div class="number" id="backupSize">0 KB</div>
+                    <div class="label">Tamaño de Datos</div>
+                </div>
+            </div>
+            <p style="margin-top: 10px; font-size: 12px; color: #666;">
+                <strong>💡 Consejo:</strong> Haz clic en "🔄 Sincronizar" para exportar o importar datos.
+            </p>
+        </div>
+        
+        <!-- Sección de Inventario -->
+        <div id="inventorySection" class="inventory-section">
+            <div class="stats-container">
+                <div class="stat-card">
+                    <div class="stat-number" id="totalExtintores">0</div>
+                    <div class="stat-label">Total de Extintores</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #2ecc71, #27ae60);">
+                    <div class="stat-number" id="activeExtintores">0</div>
+                    <div class="stat-label">En Buen Estado</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #e74c3c, #c0392b);">
+                    <div class="stat-number" id="inactiveExtintores">0</div>
+                    <div class="stat-label">Requieren Atención</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, #f39c12, #d68910);">
+                    <div class="stat-number" id="inspectedThisMonth">0</div>
+                    <div class="stat-label">Inspeccionados Este Mes</div>
+                </div>
+            </div>
+            
+            <div class="inventory-controls">
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="🔍 Buscar por número, ubicación, área...">
+                </div>
+                <div class="filters">
+                    <select id="filterArea">
+                        <option value="">Todas las áreas</option>
+                    </select>
+                    <select id="filterStatus">
+                        <option value="">Todos los estados</option>
+                        <option value="active">Buen estado</option>
+                        <option value="inactive">Requiere atención</option>
+                    </select>
+                    <button class="nav-btn" id="clearFilters">Limpiar Filtros</button>
+                </div>
+            </div>
+            
+            <div class="inventory-table-container">
+                <table class="inventory-table">
+                    <thead>
+                        <tr>
+                            <th>N°</th>
+                            <th>ID</th>
+                            <th>Ubicación</th>
+                            <th>Área</th>
+                            <th>Tipo</th>
+                            <th>Última Inspección</th>
+                            <th>Próxima Recarga</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventoryTableBody">
+                        <!-- Los datos se cargarán dinámicamente -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <div style="text-align: center; margin-top: 20px;">
+                <button class="nav-btn" id="backFromInventory">Regresar</button>
+            </div>
+        </div>
+        
+        <!-- Vista de datos -->
+        <div id="viewSection" class="hidden">
+            <table class="table-with-image">
+                <tr>
+                    <td class="data-cell">
+                        <h2>Datos Generales del Extintor</h2>
+                        <table class="data-table">
+                            <tr>
+                                <th>N°</th>
+                                <td id="viewNumero">-</td>
+                            </tr>
+                            <tr>
+                                <th>Área / Equipo</th>
+                                <td id="viewArea">-</td>
+                            </tr>
+                            <tr>
+                                <th>Ubicación</th>
+                                <td id="viewUbicacion">-</td>
+                            </tr>
+                            <tr>
+                                <th>ID</th>
+                                <td id="viewId">-</td>
+                            </tr>
+                            <tr>
+                                <th>Código</th>
+                                <td id="viewCodigo">-</td>
+                            </tr>
+                            <tr>
+                                <th>Coordenada Este</th>
+                                <td id="viewEste">-</td>
+                            </tr>
+                            <tr>
+                                <th>Coordenada Norte</th>
+                                <td id="viewNorte">-</td>
+                            </tr>
+                            <tr>
+                                <th>Fecha de Recarga</th>
+                                <td id="viewFechaRecarga">-</td>
+                            </tr>
+                            <tr>
+                                <th>Próxima Fecha de Recarga</th>
+                                <td id="viewProximaRecarga">-</td>
+                            </tr>
+                            <tr>
+                                <th>Inspector</th>
+                                <td id="viewInspector">-</td>
+                            </tr>
+                            <tr>
+                                <th>Cargo</th>
+                                <td id="viewCargo">-</td>
+                            </tr>
+                            <tr>
+                                <th>Fecha de Inspección</th>
+                                <td id="viewFecha">-</td>
+                            </tr>
+                        </table>
+                    </td>
+                    <td class="image-cell">
+                        <h2>Imagen del Extintor</h2>
+                        <div id="viewImageContainer" class="image-placeholder">
+                            <img id="viewImage" src="" alt="Imagen del extintor">
+                            <p id="noImageMessage">No hay imagen cargada</p>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+            
+            <h2>Inspección Mensual - Estado</h2>
+            <table class="status-table">
+                <tr>
+                    <td>Tiene precinto y pasador</td>
+                    <td><span id="viewPrecinto" class="check-status">-</span></td>
+                </tr>
+                <tr>
+                    <td>Buena condición del cilindro</td>
+                    <td><span id="viewCondicion" class="check-status">-</span></td>
+                </tr>
+                <tr>
+                    <td>Manguera ajustada</td>
+                    <td><span id="viewManguera" class="check-status">-</span></td>
+                </tr>
+                <tr>
+                    <td>Tobera y cinturón ajustado</td>
+                    <td><span id="viewTobera" class="check-status">-</span></td>
+                </tr>
+                <tr>
+                    <td>Señalización visible</td>
+                    <td><span id="viewSenalizacion" class="check-status">-</span></td>
+                </tr>
+                <tr>
+                    <td>Instrucciones legibles</td>
+                    <td><span id="viewInstrucciones" class="check-status">-</span></td>
+                </tr>
+                <tr>
+                    <td>Presión adecuada</td>
+                    <td><span id="viewPresion" class="check-status">-</span></td>
+                </tr>
+                <tr>
+                    <td>Sin desgaste, óxido o fugas</td>
+                    <td><span id="viewDesgaste" class="check-status">-</span></td>
+                </tr>
+                <tr>
+                    <td>Limpieza sin polvo o residuos</td>
+                    <td><span id="viewLimpieza" class="check-status">-</span></td>
+                </tr>
+                <tr>
+                    <td>Peso</td>
+                    <td id="viewPeso">-</td>
+                </tr>
+                <tr>
+                    <td>Tipo</td>
+                    <td id="viewTipo">-</td>
+                </tr>
+            </table>
+            
+            <h2>Fichas Técnicas de los Agentes</h2>
+            <div class="agents-table-container">
+                <table class="agents-table" id="agentsTable">
+                    <thead>
+                        <tr>
+                            <th>Parámetro/Mes</th>
+                            <th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th>
+                            <th>7</th><th>8</th><th>9</th><th>10</th><th>11</th><th>12</th>
+                        </tr>
+                    </thead>
+                    <tbody id="agentsTableBody">
+                        <!-- Las filas se generarán dinámicamente -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="btn-container">
+                <button class="nav-btn" id="backFromView">← Volver al Inventario</button>
+                <button class="nav-btn" id="printViewBtn">🖨️ Imprimir</button>
+            </div>
+        </div>
+        
+        <!-- Sección de edición -->
+        <div id="editSection" class="hidden">
+            <div class="form-section">
+                <h3>Datos Generales del Extintor</h3>
+                <table class="table-with-image">
+                    <tr>
+                        <td class="data-cell">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="editNumero">N° *</label>
+                                    <input type="text" id="editNumero" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="editArea">Área / Equipo *</label>
+                                    <input type="text" id="editArea" required>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="editUbicacion">Ubicación *</label>
+                                    <input type="text" id="editUbicacion" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="editId">ID *</label>
+                                    <input type="text" id="editId" required>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="editCodigo">Código</label>
+                                    <input type="text" id="editCodigo">
+                                </div>
+                                <div class="form-group">
+                                    <label for="editEste">Coordenada Este</label>
+                                    <input type="text" id="editEste">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="editNorte">Coordenada Norte</label>
+                                    <input type="text" id="editNorte">
+                                </div>
+                                <div class="form-group">
+                                    <label for="editFechaRecarga">Fecha de Recarga</label>
+                                    <input type="text" id="editFechaRecarga">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="editProximaRecarga">Próxima Fecha de Recarga *</label>
+                                    <input type="text" id="editProximaRecarga" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="editInspector">Inspector *</label>
+                                    <input type="text" id="editInspector" required>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="editCargo">Cargo *</label>
+                                    <input type="text" id="editCargo" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="editFecha">Fecha de Inspección *</label>
+                                    <input type="date" id="editFecha" required>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="image-cell">
+                            <h3>Imagen del Extintor</h3>
+                            <div id="editImageContainer" class="image-placeholder">
+                                <img id="editImage" src="" alt="Imagen del extintor">
+                                <p id="editNoImageMessage">No hay imagen cargada</p>
+                            </div>
+                            <div class="form-group">
+                                <label for="imageUpload">Cargar imagen</label>
+                                <input type="file" id="imageUpload" accept="image/*">
+                            </div>
+                            <button id="removeImageBtn" class="secondary-btn">Eliminar imagen</button>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            
+            <div class="form-section">
+                <h3>Inspección Mensual - Estado</h3>
+                <div class="form-row">
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="editPrecinto">
+                        <label for="editPrecinto">Tiene precinto y pasador</label>
+                    </div>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="editCondicion">
+                        <label for="editCondicion">Buena condición del cilindro</label>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="editManguera">
+                        <label for="editManguera">Manguera ajustada</label>
+                    </div>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="editTobera">
+                        <label for="editTobera">Tobera y cinturón ajustado</label>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="editSenalizacion">
+                        <label for="editSenalizacion">Señalización visible</label>
+                    </div>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="editInstrucciones">
+                        <label for="editInstrucciones">Instrucciones legibles</label>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="editPresion">
+                        <label for="editPresion">Presión adecuada</label>
+                    </div>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="editDesgaste">
+                        <label for="editDesgaste">Sin desgaste, óxido o fugas</label>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="editLimpieza">
+                        <label for="editLimpieza">Limpieza sin polvo o residuos</label>
+                    </div>
+                    <div class="form-group">
+                        <label for="editPeso">Peso</label>
+                        <input type="text" id="editPeso">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="editTipo">Tipo</label>
+                        <input type="text" id="editTipo">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-section">
+                <h3>Matriz de Parámetros por Meses</h3>
+                <p class="description">Los números del 1 al 17 representan los parámetros según la lista. Los números del 1 al 12 representan los meses del año.</p>
+                <div class="agents-table-container">
+                    <table class="agents-table" id="editAgentsTable">
+                        <thead>
+                            <tr>
+                                <th>Parámetro/Mes</th>
+                                <th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th>
+                                <th>7</th><th>8</th><th>9</th><th>10</th><th>11</th><th>12</th>
+                            </tr>
+                        </thead>
+                        <tbody id="editAgentsTableBody">
+                            <!-- Las filas se generarán dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="btn-container">
+                <button id="saveBtn">💾 Guardar Cambios</button>
+                <button id="cancelBtn" class="secondary-btn">❌ Cancelar</button>
+                <button id="deleteBtn" class="nav-btn danger">🗑️ Eliminar Extintor</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal de confirmación -->
+    <div id="confirmModal" class="modal">
+        <div class="modal-content">
+            <h3>¿Está seguro?</h3>
+            <p id="confirmMessage">Esta acción no se puede deshacer.</p>
+            <div class="modal-buttons">
+                <button id="confirmYes" class="nav-btn danger">Sí, eliminar</button>
+                <button id="confirmNo" class="secondary-btn">Cancelar</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Menú móvil (solo visible en pantallas pequeñas) -->
+    <button class="mobile-menu-toggle" id="mobileMenuToggle" style="display: none;">☰</button>
+    <div class="mobile-menu" id="mobileMenu">
+        <a href="#" onclick="showInventory(); closeMobileMenu();">📋 Inventario</a>
+        <a href="#" onclick="newExtintor(); closeMobileMenu();">➕ Nuevo Extintor</a>
+        <a href="#" onclick="showViewSection(); closeMobileMenu();">👁️ Ver Datos</a>
+        <a href="#" onclick="showEditSection(); closeMobileMenu();">✏️ Editar Datos</a>
+        <a href="#" onclick="showSyncOptions(); closeMobileMenu();">🔄 Sincronizar</a>
+        <a href="#" onclick="exportToPDF(); closeMobileMenu();">📄 Exportar PDF</a>
+        <a href="#" onclick="exportAllToPDF(); closeMobileMenu();">📊 Exportar Todo</a>
+    </div>
+    
+    <script>
+        // Variables globales
+        let currentExtintorId = null;
+        let inventory = [];
+        let currentEditingId = null;
+        let isNewRecord = false;
+        
+        // Lista de parámetros
+        const parametros = [
+            "Mal ubicado",
+            "Acceso obstruido",
+            "Zona y/o extintor no enumerado",
+            "Pictograma de clase de fuego Carece/Ilegible",
+            "Pictograma de forma de uso: Carece/Ilegible",
+            "Etiqueta de recarga: Carece/Ilegible",
+            "Tipo de cargaje/ Carga",
+            "Colgador-Ausente/Inadecuado",
+            "Sin pasador y/o precinto de seguridad",
+            "Manómetro: Con presión inadecuada/ dañado",
+            "Manija de acarreo/Palanca de activación de cabezal/pistola dañada ausente",
+            "Manguera: Dañada/Ausente",
+            "Tobera, piñón o pistola: dañada/Ausente",
+            "Abrazadera o sujetador de manguera: Inadecuado/Dañado/Ausente",
+            "Cilindro/Botella/Cartucho impulsor en mal estado",
+            "Pintura deteriorada en: Cilindro/Botella/Cartucho impulsor",
+            "Otros"
+        ];
+
+        // Plantilla de datos de extintor
+        const extintorTemplate = {
+            id: null,
+            numero: "",
+            area: "",
+            ubicacion: "",
+            extintorId: "",
+            codigo: "",
+            este: "",
+            norte: "",
+            fechaRecarga: "",
+            proximaRecarga: "",
+            inspector: "",
+            cargo: "",
+            fecha: new Date().toISOString().split('T')[0],
+            precinto: true,
+            condicion: true,
+            manguera: true,
+            tobera: true,
+            senalizacion: false,
+            instrucciones: true,
+            presion: false,
+            desgaste: true,
+            limpieza: false,
+            peso: "",
+            tipo: "",
+            imagen: "",
+            agentsMatrix: Array(17).fill().map(() => Array(12).fill(false)),
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+        };
+
+        // ==============================================
+        // FUNCIONES DE COMPARTIR DATOS
+        // ==============================================
+
+        // Mostrar notificación
+        function showNotification(message, type = 'success') {
+            const notification = document.createElement('div');
+            notification.className = `sync-notification ${type}`;
+            notification.innerHTML = `
+                <span>${type === 'success' ? '✅' : type === 'error' ? '❌' : '⚠️'} ${message}</span>
+                <button onclick="this.parentElement.remove()" style="background: none; border: none; color: white; cursor: pointer; font-size: 18px;">×</button>
+            `;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                if (notification.parentElement) {
+                    notification.remove();
+                }
+            }, 5000);
+        }
+
+        // Exportar datos a archivo JSON
+        function exportData() {
+            if (inventory.length === 0) {
+                showNotification('No hay datos para exportar', 'warning');
+                return;
+            }
+            
+            const dataStr = JSON.stringify(inventory, null, 2);
+            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+            
+            const exportFileDefaultName = `inventario_extintores_${new Date().toISOString().split('T')[0]}.json`;
+            
+            const linkElement = document.createElement('a');
+            linkElement.setAttribute('href', dataUri);
+            linkElement.setAttribute('download', exportFileDefaultName);
+            linkElement.click();
+            
+            showNotification(`Datos exportados: ${exportFileDefaultName}`);
+        }
+
+        // Importar datos desde archivo JSON
+        function importData() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            
+            input.onchange = function(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const importedData = JSON.parse(e.target.result);
+                        
+                        if (!Array.isArray(importedData)) {
+                            showNotification('Formato de archivo inválido', 'error');
+                            return;
+                        }
+                        
+                        const uniqueCount = importedData.length;
+                        
+                        if (confirm(`¿Desea importar ${uniqueCount} extintores?\n\nNota: Esto reemplazará los datos actuales.`)) {
+                            inventory = importedData;
+                            saveInventory();
+                            renderInventoryTable();
+                            showNotification(`${uniqueCount} extintores importados correctamente`);
+                        }
+                    } catch (error) {
+                        showNotification('Error al importar datos. Archivo corrupto.', 'error');
+                        console.error('Error importing data:', error);
+                    }
+                };
+                reader.readAsText(file);
+            };
+            
+            input.click();
+        }
+
+        // Generar enlace compartible
+        function generateShareableLink() {
+            if (inventory.length === 0) {
+                showNotification('No hay datos para compartir', 'warning');
+                return;
+            }
+            
+            // Simplificar datos para el enlace (remover imágenes si son muy grandes)
+            const simplifiedData = inventory.map(ext => {
+                const { imagen, agentsMatrix, ...rest } = ext;
+                return rest;
+            });
+            
+            const dataStr = JSON.stringify(simplifiedData);
+            const compressed = btoa(unescape(encodeURIComponent(dataStr)));
+            
+            // Crear un enlace con los datos en el hash
+            const currentUrl = window.location.href.split('#')[0];
+            const shareableUrl = `${currentUrl}#data=${compressed}`;
+            
+            // Mostrar modal con el enlace
+            const shareDiv = document.createElement('div');
+            shareDiv.className = 'modal';
+            shareDiv.style.display = 'flex';
+            shareDiv.innerHTML = `
+                <div class="modal-content" style="max-width: 600px;">
+                    <h3 style="margin-top: 0; color: #2c3e50;">🔗 Enlace Compartible Generado</h3>
+                    <p style="color: #666; margin-bottom: 10px;">Comparte este enlace con otros usuarios:</p>
+                    
+                    <div style="background: #f8f9fa; padding: 10px; border-radius: 5px; margin-bottom: 15px; word-break: break-all; font-size: 12px; max-height: 100px; overflow-y: auto;">
+                        ${shareableUrl}
+                    </div>
+                    
+                    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                        <button onclick="copyToClipboard('${shareableUrl.replace(/'/g, "\\'")}');" 
+                                style="padding: 10px; background: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer; flex: 1;">
+                            📋 Copiar Enlace
+                        </button>
+                        
+                        <button onclick="window.open('${shareableUrl}', '_blank')" 
+                                style="padding: 10px; background: #2ecc71; color: white; border: none; border-radius: 5px; cursor: pointer; flex: 1;">
+                            🔗 Abrir Enlace
+                        </button>
+                    </div>
+                    
+                    <div style="font-size: 12px; color: #666; margin-bottom: 15px; padding: 10px; background: #fff3cd; border-radius: 5px; border-left: 4px solid #ffc107;">
+                        <strong>⚠️ Importante:</strong> Este enlace contiene ${simplifiedData.length} extintores (sin imágenes). Las imágenes no se incluyen en el enlace por limitaciones de tamaño.
+                    </div>
+                    
+                    <button onclick="this.parentElement.parentElement.remove()" 
+                            style="padding: 10px; background: #95a5a6; color: white; border: none; border-radius: 5px; cursor: pointer; width: 100%;">
+                        Cerrar
+                    </button>
+                </div>
+            `;
+            
+            document.body.appendChild(shareDiv);
+        }
+
+        // Copiar al portapapeles
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                showNotification('Enlace copiado al portapapeles');
+            }).catch(err => {
+                // Fallback para navegadores antiguos
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    showNotification('Enlace copiado al portapapeles');
+                } catch (err) {
+                    showNotification('Error al copiar el enlace', 'error');
+                }
+                document.body.removeChild(textArea);
+            });
+        }
+
+        // Cargar datos desde el hash de la URL
+        function loadDataFromUrlHash() {
+            const hash = window.location.hash;
+            if (hash.includes('data=')) {
+                const dataStr = hash.split('data=')[1];
+                try {
+                    const decoded = decodeURIComponent(escape(atob(dataStr)));
+                    const importedData = JSON.parse(decoded);
+                    
+                    if (!Array.isArray(importedData)) {
+                        console.error('Formato de datos inválido en URL');
+                        return;
+                    }
+                    
+                    if (importedData.length > 0) {
+                        const shouldImport = confirm(`Se encontraron ${importedData.length} extintores en el enlace. ¿Desea importarlos?\n\nEsto agregará los datos a los existentes.`);
+                        
+                        if (shouldImport) {
+                            let addedCount = 0;
+                            importedData.forEach(newExt => {
+                                const exists = inventory.find(ext => 
+                                    ext.numero === newExt.numero && 
+                                    ext.extintorId === newExt.extintorId
+                                );
+                                if (!exists) {
+                                    // Asignar nuevo ID y fechas
+                                    newExt.id = generateId();
+                                    newExt.createdAt = new Date().toISOString();
+                                    newExt.updatedAt = new Date().toISOString();
+                                    inventory.push(newExt);
+                                    addedCount++;
+                                }
+                            });
+                            
+                            saveInventory();
+                            renderInventoryTable();
+                            showNotification(`${addedCount} extintores importados desde el enlace`);
+                            
+                            // Limpiar el hash para no cargar de nuevo
+                            window.location.hash = '';
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error cargando datos del hash:', error);
+                }
+            }
+        }
+
+        // Mostrar opciones de sincronización
+        function showSyncOptions() {
+            const syncDiv = document.createElement('div');
+            syncDiv.className = 'modal';
+            syncDiv.style.display = 'flex';
+            syncDiv.innerHTML = `
+                <div class="modal-content" style="max-width: 500px;">
+                    <h3 style="margin-top: 0; color: #2c3e50;">🔄 Sincronización de Datos</h3>
+                    <p style="color: #666; margin-bottom: 20px;">Seleccione una opción para compartir datos:</p>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 15px;">
+                        <button onclick="exportData(); this.parentElement.parentElement.parentElement.remove();" 
+                                style="padding: 12px; background: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; text-align: left;">
+                            📤 <strong>Exportar Datos</strong><br>
+                            <span style="font-size: 12px; font-weight: normal;">Guardar archivo .json para compartir</span>
+                        </button>
+                        
+                        <button onclick="importData(); this.parentElement.parentElement.parentElement.remove();" 
+                                style="padding: 12px; background: #2ecc71; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; text-align: left;">
+                            📥 <strong>Importar Datos</strong><br>
+                            <span style="font-size: 12px; font-weight: normal;">Cargar archivo .json recibido</span>
+                        </button>
+                        
+                        <button onclick="generateShareableLink();" 
+                                style="padding: 12px; background: #9b59b6; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; text-align: left;">
+                            🔗 <strong>Generar Enlace Compartible</strong><br>
+                            <span style="font-size: 12px; font-weight: normal;">Crear enlace con datos (sin imágenes)</span>
+                        </button>
+                        
+                        <button onclick="showBackupRestoreOptions();" 
+                                style="padding: 12px; background: #f39c12; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; text-align: left;">
+                            💾 <strong>Respaldo y Restauración</strong><br>
+                            <span style="font-size: 12px; font-weight: normal;">Gestionar copias de seguridad</span>
+                        </button>
+                        
+                        <button onclick="this.parentElement.parentElement.parentElement.remove()" 
+                                style="padding: 12px; background: #95a5a6; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                            Cancelar
+                        </button>
+                    </div>
+                    
+                    <div style="margin-top: 20px; padding: 10px; background: #f8f9fa; border-radius: 5px; font-size: 12px; color: #666;">
+                        <strong>💡 Para compartir entre computadoras:</strong><br>
+                        1. <strong>Exporta</strong> los datos<br>
+                        2. <strong>Envía</strong> el archivo .json por email/WhatsApp<br>
+                        3. La otra persona <strong>importa</strong> el archivo
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(syncDiv);
+        }
+
+        // Mostrar opciones de respaldo
+        function showBackupRestoreOptions() {
+            const backups = getBackups();
+            
+            const backupDiv = document.createElement('div');
+            backupDiv.className = 'modal';
+            backupDiv.style.display = 'flex';
+            backupDiv.innerHTML = `
+                <div class="modal-content" style="max-width: 600px;">
+                    <h3 style="margin-top: 0; color: #2c3e50;">💾 Respaldo y Restauración</h3>
+                    
+                    <div style="margin-bottom: 20px;">
+                        <button onclick="createBackup()" style="padding: 10px; background: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer; width: 100%; margin-bottom: 10px;">
+                            📁 Crear Respaldo Ahora
+                        </button>
+                        <p style="font-size: 12px; color: #666; text-align: center;">Último respaldo: <span id="lastBackupTime">${getLastBackupTime()}</span></p>
+                    </div>
+                    
+                    <div style="max-height: 300px; overflow-y: auto; margin-bottom: 20px;">
+                        <h4 style="margin-top: 0; color: #2c3e50;">Respaldos Disponibles</h4>
+                        ${backups.length === 0 ? 
+                            '<p style="color: #666; text-align: center;">No hay respaldos disponibles</p>' : 
+                            backups.map((backup, index) => `
+                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border: 1px solid #ddd; border-radius: 5px; margin-bottom: 10px;">
+                                    <div>
+                                        <strong>Respaldo ${backups.length - index}</strong><br>
+                                        <span style="font-size: 12px; color: #666;">
+                                            ${formatDate(backup.timestamp)} - ${backup.data.length} extintores
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <button onclick="restoreBackup(${index})" style="padding: 5px 10px; background: #2ecc71; color: white; border: none; border-radius: 3px; cursor: pointer; margin-right: 5px;">
+                                            Restaurar
+                                        </button>
+                                        <button onclick="deleteBackup(${index})" style="padding: 5px 10px; background: #e74c3c; color: white; border: none; border-radius: 3px; cursor: pointer;">
+                                            Eliminar
+                                        </button>
+                                    </div>
+                                </div>
+                            `).join('')
+                        }
+                    </div>
+                    
+                    <button onclick="this.parentElement.parentElement.remove(); showSyncOptions();" 
+                            style="padding: 10px; background: #95a5a6; color: white; border: none; border-radius: 5px; cursor: pointer; width: 100%;">
+                        Volver
+                    </button>
+                </div>
+            `;
+            
+            // Reemplazar el modal actual
+            document.querySelector('.modal').remove();
+            document.body.appendChild(backupDiv);
+        }
+
+        // Sistema de respaldos
+        function getBackups() {
+            const backups = JSON.parse(localStorage.getItem('extintorBackups') || '[]');
+            return backups.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        }
+
+        function createBackup() {
+            const backups = getBackups();
+            
+            // Mantener solo los últimos 10 respaldos
+            if (backups.length >= 10) {
+                backups.pop();
+            }
+            
+            const backup = {
+                timestamp: new Date().toISOString(),
+                data: [...inventory],
+                count: inventory.length
+            };
+            
+            backups.unshift(backup);
+            localStorage.setItem('extintorBackups', JSON.stringify(backups));
+            
+            showNotification(`Respaldo creado: ${inventory.length} extintores guardados`);
+            showBackupRestoreOptions(); // Refrescar la vista
+        }
+
+        function restoreBackup(index) {
+            const backups = getBackups();
+            const backup = backups[index];
+            
+            if (backup && confirm(`¿Restaurar respaldo del ${formatDate(backup.timestamp)} con ${backup.data.length} extintores?\n\nEsto reemplazará los datos actuales.`)) {
+                inventory = backup.data;
+                saveInventory();
+                renderInventoryTable();
+                showNotification(`${backup.data.length} extintores restaurados desde respaldo`);
+                
+                // Cerrar modal
+                document.querySelector('.modal').remove();
+            }
+        }
+
+        function deleteBackup(index) {
+            const backups = getBackups();
+            if (confirm('¿Eliminar este respaldo?')) {
+                backups.splice(index, 1);
+                localStorage.setItem('extintorBackups', JSON.stringify(backups));
+                showNotification('Respaldo eliminado');
+                showBackupRestoreOptions(); // Refrescar la vista
+            }
+        }
+
+        function getLastBackupTime() {
+            const backups = getBackups();
+            return backups.length > 0 ? formatDate(backups[0].timestamp) : 'Nunca';
+        }
+
+        // Actualizar información de respaldo
+        function updateBackupInfo() {
+            const backupInfo = document.getElementById('backupInfo');
+            if (backupInfo) {
+                backupInfo.style.display = 'block';
+                document.getElementById('backupCount').textContent = inventory.length;
+                document.getElementById('backupDate').textContent = new Date().toLocaleDateString('es-ES');
+                document.getElementById('backupSize').textContent = `${Math.round(JSON.stringify(inventory).length / 1024)} KB`;
+            }
+        }
+
+        // ==============================================
+        // FUNCIONES DE MENÚ MÓVIL
+        // ==============================================
+
+        // Mostrar/ocultar menú móvil
+        function toggleMobileMenu() {
+            const mobileMenu = document.getElementById('mobileMenu');
+            if (mobileMenu) {
+                mobileMenu.classList.toggle('show');
+            }
+        }
+
+        function closeMobileMenu() {
+            const mobileMenu = document.getElementById('mobileMenu');
+            if (mobileMenu) {
+                mobileMenu.classList.remove('show');
+            }
+        }
+
+        // Detectar si es móvil y ajustar navegación
+        function checkMobileView() {
+            const isMobile = window.innerWidth <= 480;
+            const mobileToggle = document.getElementById('mobileMenuToggle');
+            const navButtons = document.getElementById('desktopNavButtons');
+            
+            if (isMobile && mobileToggle) {
+                mobileToggle.style.display = 'block';
+                if (navButtons) {
+                    navButtons.style.display = 'none';
+                }
+            } else {
+                if (mobileToggle) {
+                    mobileToggle.style.display = 'none';
+                }
+                if (navButtons) {
+                    navButtons.style.display = 'flex';
+                }
+            }
+        }
+
+        // ==============================================
+        // FUNCIONES PRINCIPALES DEL SISTEMA
+        // ==============================================
+
+        // Inicialización
+        document.addEventListener('DOMContentLoaded', function() {
+            // Cargar inventario desde localStorage
+            loadInventory();
+            
+            // Construir tablas de agentes
+            buildAgentsTable();
+            buildEditAgentsTable();
+            
+            // Configurar event listeners
+            setupEventListeners();
+            
+            // Actualizar información de respaldo
+            updateBackupInfo();
+            
+            // Configurar menú móvil
+            checkMobileView();
+            
+            // Cargar datos desde el hash de la URL
+            setTimeout(() => {
+                loadDataFromUrlHash();
+            }, 1000);
+            
+            // Mostrar inventario por defecto
+            showInventory();
+            
+            // Crear respaldo automático cada hora
+            setInterval(() => {
+                if (inventory.length > 0) {
+                    createBackup();
+                }
+            }, 60 * 60 * 1000); // Cada hora
+        });
+
+        // Configurar todos los event listeners
+        function setupEventListeners() {
+            // Navegación
+            document.getElementById('inventoryBtn').addEventListener('click', showInventory);
+            document.getElementById('newBtn').addEventListener('click', newExtintor);
+            document.getElementById('viewBtn').addEventListener('click', showViewSection);
+            document.getElementById('editBtn').addEventListener('click', showEditSection);
+            document.getElementById('backFromInventory').addEventListener('click', showViewSection);
+            document.getElementById('backFromView').addEventListener('click', showInventory);
+            
+            // Sincronización
+            document.getElementById('syncBtn').addEventListener('click', showSyncOptions);
+            
+            // Exportación
+            document.getElementById('exportBtn').addEventListener('click', exportToPDF);
+            document.getElementById('exportAllBtn').addEventListener('click', exportAllToPDF);
+            document.getElementById('printViewBtn').addEventListener('click', printView);
+            
+            // Formulario
+            document.getElementById('saveBtn').addEventListener('click', saveData);
+            document.getElementById('cancelBtn').addEventListener('click', cancelEdit);
+            document.getElementById('deleteBtn').addEventListener('click', confirmDelete);
+            document.getElementById('imageUpload').addEventListener('change', handleImageUpload);
+            document.getElementById('removeImageBtn').addEventListener('click', removeImage);
+            
+            // Inventario
+            document.getElementById('searchInput').addEventListener('input', filterInventory);
+            document.getElementById('filterArea').addEventListener('change', filterInventory);
+            document.getElementById('filterStatus').addEventListener('change', filterInventory);
+            document.getElementById('clearFilters').addEventListener('click', clearFilters);
+            
+            // Modal
+            document.getElementById('confirmYes').addEventListener('click', deleteExtintor);
+            document.getElementById('confirmNo').addEventListener('click', closeModal);
+            
+            // Menú móvil
+            const mobileToggle = document.getElementById('mobileMenuToggle');
+            if (mobileToggle) {
+                mobileToggle.addEventListener('click', toggleMobileMenu);
+            }
+            
+            // Cerrar menú móvil al hacer clic fuera
+            document.addEventListener('click', function(e) {
+                const mobileMenu = document.getElementById('mobileMenu');
+                const mobileToggle = document.getElementById('mobileMenuToggle');
+                
+                if (mobileMenu && mobileToggle && 
+                    !mobileMenu.contains(e.target) && 
+                    !mobileToggle.contains(e.target)) {
+                    closeMobileMenu();
+                }
+            });
+            
+            // Cerrar modal haciendo clic fuera
+            document.getElementById('confirmModal').addEventListener('click', function(e) {
+                if (e.target === this) closeModal();
+            });
+            
+            // Detectar cambios de tamaño de ventana
+            window.addEventListener('resize', checkMobileView);
+        }
+
+        // Cargar inventario desde localStorage
+        function loadInventory() {
+            const savedInventory = localStorage.getItem('extintorInventory');
+            if (savedInventory) {
+                try {
+                    inventory = JSON.parse(savedInventory);
+                } catch (error) {
+                    console.error('Error cargando inventario:', error);
+                    inventory = [];
+                }
+            }
+            updateInventoryStats();
+        }
+
+        // Guardar inventario en localStorage
+        function saveInventory() {
+            localStorage.setItem('extintorInventory', JSON.stringify(inventory));
+            updateInventoryStats();
+            updateBackupInfo();
+        }
+
+        // Actualizar estadísticas del inventario
+        function updateInventoryStats() {
+            const total = inventory.length;
+            const active = inventory.filter(ext => 
+                ext.precinto && ext.condicion && ext.manguera && ext.tobera && 
+                ext.senalizacion && ext.instrucciones && ext.presion && 
+                ext.desgaste && ext.limpieza
+            ).length;
+            const inactive = total - active;
+            const thisMonth = new Date().getMonth();
+            const inspectedThisMonth = inventory.filter(ext => {
+                const inspecDate = new Date(ext.fecha);
+                return inspecDate.getMonth() === thisMonth;
+            }).length;
+            
+            document.getElementById('totalExtintores').textContent = total;
+            document.getElementById('activeExtintores').textContent = active;
+            document.getElementById('inactiveExtintores').textContent = inactive;
+            document.getElementById('inspectedThisMonth').textContent = inspectedThisMonth;
+        }
+
+        // Mostrar inventario
+        function showInventory() {
+            document.getElementById('inventorySection').classList.remove('hidden');
+            document.getElementById('viewSection').classList.add('hidden');
+            document.getElementById('editSection').classList.add('hidden');
+            
+            // Actualizar filtro de áreas
+            updateAreaFilter();
+            
+            // Renderizar tabla
+            renderInventoryTable();
+            
+            // Actualizar botones de navegación
+            updateNavButtons('inventory');
+        }
+
+        // Renderizar tabla de inventario
+        function renderInventoryTable(filteredData = null) {
+            const tableBody = document.getElementById('inventoryTableBody');
+            const data = filteredData || inventory;
+            
+            tableBody.innerHTML = '';
+            
+            if (data.length === 0) {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="9" style="text-align: center; padding: 40px;">
+                            <p style="color: #666; font-size: 16px;">No hay extintores registrados</p>
+                            <button class="nav-btn" onclick="newExtintor()" style="margin-top: 15px;">
+                                ➕ Agregar primer extintor
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            data.forEach((extintor, index) => {
+                const row = document.createElement('tr');
+                const isActive = extintor.precinto && extintor.condicion && extintor.manguera && 
+                                extintor.tobera && extintor.senalizacion && extintor.instrucciones && 
+                                extintor.presion && extintor.desgaste && extintor.limpieza;
+                
+                row.innerHTML = `
+                    <td>${extintor.numero}</td>
+                    <td>${extintor.extintorId}</td>
+                    <td>${extintor.ubicacion}</td>
+                    <td>${extintor.area}</td>
+                    <td>${extintor.tipo}</td>
+                    <td>${formatDate(extintor.fecha)}</td>
+                    <td>${extintor.proximaRecarga}</td>
+                    <td><span class="status-badge ${isActive ? 'status-active' : 'status-inactive'}">
+                        ${isActive ? 'OK' : 'Revisar'}
+                    </span></td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="action-btn view" onclick="viewExtintor('${extintor.id}')">Ver</button>
+                            <button class="action-btn edit" onclick="editExtintor('${extintor.id}')">Editar</button>
+                            <button class="action-btn delete" onclick="confirmDelete('${extintor.id}')">Eliminar</button>
+                        </div>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        // Filtrar inventario
+        function filterInventory() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const areaFilter = document.getElementById('filterArea').value;
+            const statusFilter = document.getElementById('filterStatus').value;
+            
+            let filtered = inventory;
+            
+            // Filtrar por búsqueda
+            if (searchTerm) {
+                filtered = filtered.filter(ext => 
+                    ext.numero.toLowerCase().includes(searchTerm) ||
+                    ext.ubicacion.toLowerCase().includes(searchTerm) ||
+                    ext.area.toLowerCase().includes(searchTerm) ||
+                    ext.extintorId.toLowerCase().includes(searchTerm)
+                );
+            }
+            
+            // Filtrar por área
+            if (areaFilter) {
+                filtered = filtered.filter(ext => ext.area === areaFilter);
+            }
+            
+            // Filtrar por estado
+            if (statusFilter) {
+                filtered = filtered.filter(ext => {
+                    const isActive = ext.precinto && ext.condicion && ext.manguera && 
+                                   ext.tobera && ext.senalizacion && ext.instrucciones && 
+                                   ext.presion && ext.desgaste && ext.limpieza;
+                    return statusFilter === 'active' ? isActive : !isActive;
+                });
+            }
+            
+            renderInventoryTable(filtered);
+        }
+
+        // Limpiar filtros
+        function clearFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('filterArea').value = '';
+            document.getElementById('filterStatus').value = '';
+            renderInventoryTable();
+        }
+
+        // Actualizar filtro de áreas
+        function updateAreaFilter() {
+            const filterSelect = document.getElementById('filterArea');
+            const areas = [...new Set(inventory.map(ext => ext.area))].sort();
+            
+            // Mantener la opción "Todas las áreas"
+            const currentValue = filterSelect.value;
+            filterSelect.innerHTML = '<option value="">Todas las áreas</option>';
+            
+            areas.forEach(area => {
+                if (area) {
+                    const option = document.createElement('option');
+                    option.value = area;
+                    option.textContent = area;
+                    filterSelect.appendChild(option);
+                }
+            });
+            
+            // Restaurar valor anterior si existe
+            if (currentValue && areas.includes(currentValue)) {
+                filterSelect.value = currentValue;
+            }
+        }
+
+        // Ver extintor
+        function viewExtintor(id) {
+            const extintor = inventory.find(ext => ext.id === id);
+            if (!extintor) return;
+            
+            currentExtintorId = id;
+            loadDataIntoView(extintor);
+            showViewSection();
+        }
+
+        // Editar extintor
+        function editExtintor(id) {
+            const extintor = inventory.find(ext => ext.id === id);
+            if (!extintor) return;
+            
+            currentEditingId = id;
+            isNewRecord = false;
+            loadDataIntoEditForm(extintor);
+            showEditSection();
+        }
+
+        // Nuevo extintor
+        function newExtintor() {
+            currentEditingId = generateId();
+            isNewRecord = true;
+            
+            // Crear nuevo extintor con template
+            const newExtintor = {...extintorTemplate};
+            newExtintor.id = currentEditingId;
+            newExtintor.createdAt = new Date().toISOString();
+            newExtintor.updatedAt = new Date().toISOString();
+            
+            loadDataIntoEditForm(newExtintor);
+            showEditSection();
+        }
+
+        // Cargar datos en la vista
+        function loadDataIntoView(extintor) {
+            // Datos generales
+            document.getElementById('viewNumero').textContent = extintor.numero || '-';
+            document.getElementById('viewArea').textContent = extintor.area || '-';
+            document.getElementById('viewUbicacion').textContent = extintor.ubicacion || '-';
+            document.getElementById('viewId').textContent = extintor.extintorId || '-';
+            document.getElementById('viewCodigo').textContent = extintor.codigo || '-';
+            document.getElementById('viewEste').textContent = extintor.este || '-';
+            document.getElementById('viewNorte').textContent = extintor.norte || '-';
+            document.getElementById('viewFechaRecarga').textContent = extintor.fechaRecarga || '-';
+            document.getElementById('viewProximaRecarga').textContent = extintor.proximaRecarga || '-';
+            document.getElementById('viewInspector').textContent = extintor.inspector || '-';
+            document.getElementById('viewCargo').textContent = extintor.cargo || '-';
+            document.getElementById('viewFecha').textContent = formatDate(extintor.fecha) || '-';
+            
+            // Inspección mensual
+            updateCheckStatus('viewPrecinto', extintor.precinto);
+            updateCheckStatus('viewCondicion', extintor.condicion);
+            updateCheckStatus('viewManguera', extintor.manguera);
+            updateCheckStatus('viewTobera', extintor.tobera);
+            updateCheckStatus('viewSenalizacion', extintor.senalizacion);
+            updateCheckStatus('viewInstrucciones', extintor.instrucciones);
+            updateCheckStatus('viewPresion', extintor.presion);
+            updateCheckStatus('viewDesgaste', extintor.desgaste);
+            updateCheckStatus('viewLimpieza', extintor.limpieza);
+            
+            document.getElementById('viewPeso').textContent = extintor.peso || '-';
+            document.getElementById('viewTipo').textContent = extintor.tipo || '-';
+            
+            // Imagen
+            updateImageView(extintor.imagen);
+            
+            // Tabla de agentes
+            updateAgentsTableView(extintor.agentsMatrix);
+        }
+
+        // Cargar datos en el formulario de edición
+        function loadDataIntoEditForm(extintor) {
+            // Datos generales
+            document.getElementById('editNumero').value = extintor.numero || '';
+            document.getElementById('editArea').value = extintor.area || '';
+            document.getElementById('editUbicacion').value = extintor.ubicacion || '';
+            document.getElementById('editId').value = extintor.extintorId || '';
+            document.getElementById('editCodigo').value = extintor.codigo || '';
+            document.getElementById('editEste').value = extintor.este || '';
+            document.getElementById('editNorte').value = extintor.norte || '';
+            document.getElementById('editFechaRecarga').value = extintor.fechaRecarga || '';
+            document.getElementById('editProximaRecarga').value = extintor.proximaRecarga || '';
+            document.getElementById('editInspector').value = extintor.inspector || '';
+            document.getElementById('editCargo').value = extintor.cargo || '';
+            document.getElementById('editFecha').value = extintor.fecha || new Date().toISOString().split('T')[0];
+            
+            // Inspección mensual
+            document.getElementById('editPrecinto').checked = extintor.precinto || false;
+            document.getElementById('editCondicion').checked = extintor.condicion || false;
+            document.getElementById('editManguera').checked = extintor.manguera || false;
+            document.getElementById('editTobera').checked = extintor.tobera || false;
+            document.getElementById('editSenalizacion').checked = extintor.senalizacion || false;
+            document.getElementById('editInstrucciones').checked = extintor.instrucciones || false;
+            document.getElementById('editPresion').checked = extintor.presion || false;
+            document.getElementById('editDesgaste').checked = extintor.desgaste || false;
+            document.getElementById('editLimpieza').checked = extintor.limpieza || false;
+            document.getElementById('editPeso').value = extintor.peso || '';
+            document.getElementById('editTipo').value = extintor.tipo || '';
+            
+            // Imagen
+            updateEditImageView(extintor.imagen);
+            
+            // Tabla de agentes
+            updateAgentsTableEdit(extintor.agentsMatrix);
+        }
+
+        // Guardar datos
+        function saveData() {
+            // Validar campos obligatorios
+            if (!validateForm()) {
+                showNotification('Complete los campos obligatorios (*)', 'warning');
+                return;
+            }
+            
+            // Recoger datos del formulario
+            const extintorData = {
+                id: currentEditingId,
+                numero: document.getElementById('editNumero').value,
+                area: document.getElementById('editArea').value,
+                ubicacion: document.getElementById('editUbicacion').value,
+                extintorId: document.getElementById('editId').value,
+                codigo: document.getElementById('editCodigo').value,
+                este: document.getElementById('editEste').value,
+                norte: document.getElementById('editNorte').value,
+                fechaRecarga: document.getElementById('editFechaRecarga').value,
+                proximaRecarga: document.getElementById('editProximaRecarga').value,
+                inspector: document.getElementById('editInspector').value,
+                cargo: document.getElementById('editCargo').value,
+                fecha: document.getElementById('editFecha').value,
+                precinto: document.getElementById('editPrecinto').checked,
+                condicion: document.getElementById('editCondicion').checked,
+                manguera: document.getElementById('editManguera').checked,
+                tobera: document.getElementById('editTobera').checked,
+                senalizacion: document.getElementById('editSenalizacion').checked,
+                instrucciones: document.getElementById('editInstrucciones').checked,
+                presion: document.getElementById('editPresion').checked,
+                desgaste: document.getElementById('editDesgaste').checked,
+                limpieza: document.getElementById('editLimpieza').checked,
+                peso: document.getElementById('editPeso').value,
+                tipo: document.getElementById('editTipo').value,
+                imagen: getCurrentImage(),
+                agentsMatrix: getAgentsMatrixData(),
+                updatedAt: new Date().toISOString()
+            };
+            
+            // Agregar fecha de creación si es nuevo
+            if (isNewRecord) {
+                extintorData.createdAt = new Date().toISOString();
+            } else {
+                // Mantener fecha de creación original
+                const existing = inventory.find(ext => ext.id === currentEditingId);
+                if (existing) {
+                    extintorData.createdAt = existing.createdAt;
+                }
+            }
+            
+            // Verificar si ya existe un extintor con el mismo número e ID
+            const duplicate = inventory.find(ext => 
+                ext.id !== currentEditingId && 
+                ext.numero === extintorData.numero && 
+                ext.extintorId === extintorData.extintorId
+            );
+            
+            if (duplicate && isNewRecord) {
+                if (!confirm(`Ya existe un extintor con número ${extintorData.numero} e ID ${extintorData.extintorId}. ¿Desea actualizarlo?`)) {
+                    return;
+                }
+                // Encontrar y reemplazar el duplicado
+                const duplicateIndex = inventory.findIndex(ext => 
+                    ext.numero === extintorData.numero && 
+                    ext.extintorId === extintorData.extintorId
+                );
+                if (duplicateIndex !== -1) {
+                    inventory[duplicateIndex] = extintorData;
+                }
+            } else {
+                if (isNewRecord) {
+                    inventory.push(extintorData);
+                } else {
+                    const index = inventory.findIndex(ext => ext.id === currentEditingId);
+                    if (index !== -1) {
+                        inventory[index] = extintorData;
+                    }
+                }
+            }
+            
+            // Guardar en localStorage
+            saveInventory();
+            
+            // Actualizar vista
+            loadDataIntoView(extintorData);
+            
+            // Cambiar a modo vista
+            showViewSection();
+            
+            // Mostrar mensaje de éxito
+            showNotification(isNewRecord ? 'Extintor guardado correctamente' : 'Datos actualizados correctamente');
+        }
+
+        // Validar formulario
+        function validateForm() {
+            const requiredFields = ['editNumero', 'editArea', 'editUbicacion', 'editId', 
+                                   'editProximaRecarga', 'editInspector', 'editCargo', 'editFecha'];
+            
+            for (const fieldId of requiredFields) {
+                const field = document.getElementById(fieldId);
+                if (!field.value.trim()) {
+                    field.style.borderColor = '#e74c3c';
+                    field.focus();
+                    return false;
+                } else {
+                    field.style.borderColor = '#ddd';
+                }
+            }
+            return true;
+        }
+
+        // Construir tabla de agentes para vista
+        function buildAgentsTable() {
+            const tableBody = document.getElementById('agentsTableBody');
+            tableBody.innerHTML = '';
+            
+            parametros.forEach((parametro, i) => {
+                const row = document.createElement('tr');
+                const paramCell = document.createElement('td');
+                paramCell.textContent = `${i + 1}. ${parametro}`;
+                paramCell.className = 'param-label';
+                row.appendChild(paramCell);
+                
+                for (let j = 0; j < 12; j++) {
+                    const cell = document.createElement('td');
+                    cell.id = `agentCell_${i}_${j}`;
+                    row.appendChild(cell);
+                }
+                
+                tableBody.appendChild(row);
+            });
+        }
+
+        // Construir tabla de agentes para edición
+        function buildEditAgentsTable() {
+            const tableBody = document.getElementById('editAgentsTableBody');
+            tableBody.innerHTML = '';
+            
+            parametros.forEach((parametro, i) => {
+                const row = document.createElement('tr');
+                const paramCell = document.createElement('td');
+                paramCell.textContent = `${i + 1}. ${parametro}`;
+                paramCell.className = 'param-label';
+                row.appendChild(paramCell);
+                
+                for (let j = 0; j < 12; j++) {
+                    const cell = document.createElement('td');
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.className = 'cell-checkbox';
+                    checkbox.id = `editAgent_${i}_${j}`;
+                    checkbox.dataset.row = i;
+                    checkbox.dataset.col = j;
+                    
+                    cell.appendChild(checkbox);
+                    row.appendChild(cell);
+                }
+                
+                tableBody.appendChild(row);
+            });
+        }
+
+        // Actualizar estado de check
+        function updateCheckStatus(elementId, isChecked) {
+            const element = document.getElementById(elementId);
+            element.textContent = isChecked ? '✓' : 'x';
+            element.className = isChecked ? 'check-status check-yes' : 'check-status check-no';
+        }
+
+        // Actualizar imagen en vista
+        function updateImageView(imageData) {
+            const viewImage = document.getElementById('viewImage');
+            const viewImageContainer = document.getElementById('viewImageContainer');
+            
+            if (imageData) {
+                viewImage.src = imageData;
+                viewImageContainer.classList.add('has-image');
+            } else {
+                viewImageContainer.classList.remove('has-image');
+            }
+        }
+
+        // Actualizar imagen en edición
+        function updateEditImageView(imageData) {
+            const editImage = document.getElementById('editImage');
+            const editImageContainer = document.getElementById('editImageContainer');
+            
+            if (imageData) {
+                editImage.src = imageData;
+                editImageContainer.classList.add('has-image');
+            } else {
+                editImageContainer.classList.remove('has-image');
+            }
+        }
+
+        // Obtener imagen actual
+        function getCurrentImage() {
+            const editImage = document.getElementById('editImage');
+            return editImage.src || '';
+        }
+
+        // Manejar carga de imagen
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (file && file.type.startsWith('image/')) {
+                // Verificar tamaño máximo (5MB)
+                if (file.size > 5 * 1024 * 1024) {
+                    showNotification('La imagen es demasiado grande (máximo 5MB)', 'error');
+                    return;
+                }
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    updateEditImageView(e.target.result);
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // Eliminar imagen
+        function removeImage() {
+            updateEditImageView('');
+            document.getElementById('imageUpload').value = '';
+        }
+
+        // Actualizar tabla de agentes en vista
+        function updateAgentsTableView(matrix) {
+            for (let i = 0; i < 17; i++) {
+                for (let j = 0; j < 12; j++) {
+                    const cell = document.getElementById(`agentCell_${i}_${j}`);
+                    if (cell) {
+                        cell.innerHTML = matrix[i][j] ? 
+                            '<span class="check-status check-yes">✓</span>' : '';
+                    }
+                }
+            }
+        }
+
+        // Actualizar tabla de agentes en edición
+        function updateAgentsTableEdit(matrix) {
+            for (let i = 0; i < 17; i++) {
+                for (let j = 0; j < 12; j++) {
+                    const checkbox = document.getElementById(`editAgent_${i}_${j}`);
+                    if (checkbox) {
+                        checkbox.checked = matrix[i][j] || false;
+                    }
+                }
+            }
+        }
+
+        // Obtener datos de la matriz de agentes
+        function getAgentsMatrixData() {
+            const matrix = Array(17).fill().map(() => Array(12).fill(false));
+            
+            for (let i = 0; i < 17; i++) {
+                for (let j = 0; j < 12; j++) {
+                    const checkbox = document.getElementById(`editAgent_${i}_${j}`);
+                    if (checkbox) {
+                        matrix[i][j] = checkbox.checked;
+                    }
+                }
+            }
+            
+            return matrix;
+        }
+
+        // Cancelar edición
+        function cancelEdit() {
+            if (isNewRecord) {
+                showInventory();
+            } else if (currentExtintorId) {
+                const extintor = inventory.find(ext => ext.id === currentExtintorId);
+                if (extintor) {
+                    loadDataIntoView(extintor);
+                    showViewSection();
+                }
+            }
+        }
+
+        // Mostrar sección de vista
+        function showViewSection() {
+            document.getElementById('inventorySection').classList.add('hidden');
+            document.getElementById('viewSection').classList.remove('hidden');
+            document.getElementById('editSection').classList.add('hidden');
+            updateNavButtons('view');
+        }
+
+        // Mostrar sección de edición
+        function showEditSection() {
+            document.getElementById('inventorySection').classList.add('hidden');
+            document.getElementById('viewSection').classList.add('hidden');
+            document.getElementById('editSection').classList.remove('hidden');
+            updateNavButtons('edit');
+        }
+
+        // Actualizar botones de navegación
+        function updateNavButtons(activeSection) {
+            const sections = ['inventory', 'view', 'edit'];
+            sections.forEach(section => {
+                const btn = document.getElementById(`${section}Btn`);
+                if (btn) {
+                    if (section === activeSection) {
+                        btn.classList.add('active');
+                        btn.disabled = true;
+                    } else {
+                        btn.classList.remove('active');
+                        btn.disabled = false;
+                    }
+                }
+            });
+        }
+
+        // Confirmar eliminación
+        function confirmDelete(id = null) {
+            const extintorId = id || currentEditingId;
+            if (!extintorId) return;
+            
+            const extintor = inventory.find(ext => ext.id === extintorId);
+            if (!extintor) return;
+            
+            document.getElementById('confirmMessage').textContent = 
+                `¿Está seguro de eliminar el extintor ${extintor.numero} - ${extintor.ubicacion}? Esta acción no se puede deshacer.`;
+            
+            currentEditingId = extintorId;
+            document.getElementById('confirmModal').style.display = 'flex';
+        }
+
+        // Eliminar extintor
+        function deleteExtintor() {
+            if (!currentEditingId) return;
+            
+            const index = inventory.findIndex(ext => ext.id === currentEditingId);
+            if (index !== -1) {
+                inventory.splice(index, 1);
+                saveInventory();
+                closeModal();
+                showInventory();
+                showNotification('Extintor eliminado correctamente');
+            }
+        }
+
+        // Cerrar modal
+        function closeModal() {
+            document.getElementById('confirmModal').style.display = 'none';
+        }
+
+        // Generar ID único
+        function generateId() {
+            return Date.now().toString(36) + Math.random().toString(36).substr(2);
+        }
+
+        // Formatear fecha
+        function formatDate(dateString) {
+            if (!dateString) return '-';
+            try {
+                const date = new Date(dateString);
+                return date.toLocaleDateString('es-ES');
+            } catch (e) {
+                return dateString;
+            }
+        }
+
+        // Mostrar loading
+        function showLoading(message = 'Generando PDF...') {
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'loading';
+            loadingDiv.innerHTML = `
+                <div style="text-align: center;">
+                    <div class="spinner"></div>
+                    <div style="margin-top: 20px; font-size: 18px; color: #2c3e50;">${message}</div>
+                </div>
+            `;
+            document.body.appendChild(loadingDiv);
+            return loadingDiv;
+        }
+
+        // Ocultar loading
+        function hideLoading(loadingDiv) {
+            if (loadingDiv && loadingDiv.parentNode) {
+                loadingDiv.parentNode.removeChild(loadingDiv);
+            }
+        }
+
+        // ==============================================
+        // FUNCIONES DE EXPORTACIÓN A PDF
+        // ==============================================
+
+        // Exportar a PDF con diseño mejorado
+        async function exportToPDF() {
+            if (!currentExtintorId) {
+                showNotification('No hay extintor seleccionado para exportar', 'warning');
+                return;
+            }
+            
+            const extintor = inventory.find(ext => ext.id === currentExtintorId);
+            if (!extintor) {
+                showNotification('Extintor no encontrado', 'error');
+                return;
+            }
+            
+            const loading = showLoading('Generando PDF del extintor...');
+            
+            try {
+                await generateProfessionalPDF(extintor);
+            } catch (error) {
+                console.error('Error generando PDF:', error);
+                showNotification('Error al generar el PDF', 'error');
+                generateBasicPDF(extintor);
+            } finally {
+                hideLoading(loading);
+            }
+        }
+
+        // Generar PDF profesional
+        async function generateProfessionalPDF(extintor) {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('p', 'mm', 'a4');
+            
+            // Crear contenido HTML para el PDF
+            const pdfContent = createPDFContent(extintor);
+            
+            // Crear elemento temporal para html2canvas
+            const tempDiv = document.createElement('div');
+            tempDiv.style.position = 'absolute';
+            tempDiv.style.left = '-9999px';
+            tempDiv.style.top = '0';
+            tempDiv.style.width = '210mm';
+            tempDiv.style.background = 'white';
+            tempDiv.style.padding = '20px';
+            tempDiv.style.fontFamily = 'Arial, sans-serif';
+            tempDiv.innerHTML = pdfContent;
+            
+            document.body.appendChild(tempDiv);
+            
+            try {
+                const canvas = await html2canvas(tempDiv, {
+                    scale: 2,
+                    useCORS: true,
+                    logging: false,
+                    backgroundColor: '#ffffff',
+                    allowTaint: true
+                });
+                
+                const imgData = canvas.toDataURL('image/jpeg', 0.8);
+                const imgWidth = 190;
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                
+                // Agregar imagen al PDF
+                doc.addImage(imgData, 'JPEG', 10, 10, imgWidth, imgHeight);
+                
+                // Guardar PDF
+                const fileName = `Extintor_${extintor.numero}_${extintor.ubicacion}_${new Date().toISOString().split('T')[0]}.pdf`;
+                doc.save(fileName);
+                
+                showNotification('PDF generado correctamente');
+                
+            } finally {
+                document.body.removeChild(tempDiv);
+            }
+        }
+
+        // Crear contenido HTML para el PDF
+        function createPDFContent(extintor) {
+            // Calcular estado general
+            const allChecks = extintor.precinto && extintor.condicion && extintor.manguera && 
+                            extintor.tobera && extintor.senalizacion && extintor.instrucciones && 
+                            extintor.presion && extintor.desgaste && extintor.limpieza;
+            
+            // Verificar si hay datos en la matriz de agentes
+            const hasAgentData = extintor.agentsMatrix && 
+                               extintor.agentsMatrix.some(row => 
+                                   row.some(cell => cell === true)
+                               );
+            
+            return `
+                <div style="font-family: Arial, sans-serif; width: 100%;">
+                    <!-- Encabezado -->
+                    <div style="text-align: center; margin-bottom: 25px; border-bottom: 3px solid #2c3e50; padding-bottom: 15px;">
+                        <div style="font-size: 22px; font-weight: bold; color: #2c3e50; margin: 0;">
+                            REGISTRO DE INSPECCIÓN DE EXTINTORES PORTÁTILES
+                        </div>
+                        <div style="font-size: 16px; font-weight: bold; color: #3498db; margin: 8px 0 0 0;">
+                            CM SAN JUAN DE DIOS - SJID
+                        </div>
+                        <div style="margin-top: 10px; font-size: 12px; color: #666;">
+                            Fecha de inspección: ${formatDate(extintor.fecha)} | 
+                            Inspector: ${extintor.inspector} | 
+                            Estado: ${allChecks ? '✅ APROBADO' : '⚠️ REVISAR'}
+                        </div>
+                    </div>
+                    
+                    <!-- Datos principales -->
+                    <div style="display: flex; margin-bottom: 25px; border: 1px solid #ddd; border-radius: 5px; overflow: hidden;">
+                        <div style="flex: 2; padding: 15px;">
+                            <h3 style="margin-top: 0; color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 5px; font-size: 16px;">
+                                📋 Datos Generales del Extintor
+                            </h3>
+                            <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+                                <tr>
+                                    <th style="width: 40%; background: #2c3e50; color: white; padding: 8px; text-align: left;">Campo</th>
+                                    <th style="width: 60%; background: #2c3e50; color: white; padding: 8px; text-align: left;">Valor</th>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 6px; border: 1px solid #ddd;"><strong>N° de Extintor</strong></td>
+                                    <td style="padding: 6px; border: 1px solid #ddd;">${extintor.numero || '-'}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 6px; border: 1px solid #ddd;"><strong>ID Único</strong></td>
+                                    <td style="padding: 6px; border: 1px solid #ddd;">${extintor.extintorId || '-'}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 6px; border: 1px solid #ddd;"><strong>Área / Equipo</strong></td>
+                                    <td style="padding: 6px; border: 1px solid #ddd;">${extintor.area || '-'}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 6px; border: 1px solid #ddd;"><strong>Ubicación</strong></td>
+                                    <td style="padding: 6px; border: 1px solid #ddd;">${extintor.ubicacion || '-'}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 6px; border: 1px solid #ddd;"><strong>Código</strong></td>
+                                    <td style="padding: 6px; border: 1px solid #ddd;">${extintor.codigo || '-'}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 6px; border: 1px solid #ddd;"><strong>Tipo</strong></td>
+                                    <td style="padding: 6px; border: 1px solid #ddd;">${extintor.tipo || '-'}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 6px; border: 1px solid #ddd;"><strong>Coordenadas</strong></td>
+                                    <td style="padding: 6px; border: 1px solid #ddd;">Este: ${extintor.este || '-'} | Norte: ${extintor.norte || '-'}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 6px; border: 1px solid #ddd;"><strong>Fecha de Recarga</strong></td>
+                                    <td style="padding: 6px; border: 1px solid #ddd;">${extintor.fechaRecarga || '-'}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 6px; border: 1px solid #ddd;"><strong>Próxima Recarga</strong></td>
+                                    <td style="padding: 6px; border: 1px solid #ddd; font-weight: bold; color: ${extintor.proximaRecarga ? '#e74c3c' : '#666'}">
+                                        ${extintor.proximaRecarga || 'No especificada'}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 6px; border: 1px solid #ddd;"><strong>Inspector</strong></td>
+                                    <td style="padding: 6px; border: 1px solid #ddd;">${extintor.inspector || '-'}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 6px; border: 1px solid #ddd;"><strong>Cargo</strong></td>
+                                    <td style="padding: 6px; border: 1px solid #ddd;">${extintor.cargo || '-'}</td>
+                                </tr>
+                            </table>
+                        </div>
+                        
+                        <!-- Imagen -->
+                        <div style="flex: 1; background: #f8f9fa; padding: 15px; border-left: 2px solid #ddd;">
+                            <h3 style="margin-top: 0; color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 5px; font-size: 16px;">
+                                📷 Imagen del Extintor
+                            </h3>
+                            ${extintor.imagen ? 
+                                `<div style="text-align: center; margin-top: 10px;">
+                                    <img src="${extintor.imagen}" style="max-width: 100%; max-height: 150px; border-radius: 5px; border: 1px solid #ddd;">
+                                </div>` : 
+                                '<div style="text-align: center; padding: 20px; color: #999; border: 2px dashed #ddd; border-radius: 5px; margin-top: 10px; font-size: 12px;">Sin imagen disponible</div>'
+                            }
+                            <div style="margin-top: 15px; font-size: 10px; color: #666; text-align: center;">
+                                Fecha de impresión: ${new Date().toLocaleDateString('es-ES')}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Estado de inspección -->
+                    <div style="margin-bottom: 25px;">
+                        <h3 style="margin-top: 0; color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 5px; font-size: 16px;">
+                            🔍 Inspección Mensual - Estado
+                        </h3>
+                        <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+                            <tr>
+                                <th style="width: 70%; background: #2c3e50; color: white; padding: 8px; text-align: left;">Parámetro de Inspección</th>
+                                <th style="width: 30%; background: #2c3e50; color: white; padding: 8px; text-align: center;">Estado</th>
+                            </tr>
+                            ${createInspectionRows(extintor)}
+                        </table>
+                        
+                        <!-- Resultado final -->
+                        <div style="margin-top: 15px; padding: 12px; background: ${allChecks ? '#d4edda' : '#f8d7da'}; border-radius: 5px; border-left: 4px solid ${allChecks ? '#28a745' : '#dc3545'}; font-size: 12px;">
+                            <strong>RESULTADO FINAL:</strong>
+                            ${allChecks ? 
+                                '✅ TODOS LOS PARÁMETROS EN ORDEN - EXTINTOR APROBADO' : 
+                                '⚠️ ALGUNOS PARÁMETROS REQUIEREN ATENCIÓN - VERIFICAR EXTINTOR'
+                            }
+                        </div>
+                    </div>
+                    
+                    <!-- Matriz de Agentes (si existe data) -->
+                    ${hasAgentData ? `
+                        <div style="margin-bottom: 25px;">
+                            <h3 style="margin-top: 0; color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 5px; font-size: 16px;">
+                                📊 Fichas Técnicas de los Agentes
+                            </h3>
+                            <div style="font-size: 10px; color: #666; margin-bottom: 10px;">
+                                Matriz de parámetros por meses (1-12) del año
+                            </div>
+                            ${generateAgentMatrixHTML(extintor)}
+                        </div>
+                    ` : ''}
+                    
+                    <!-- Firmas y observaciones -->
+                    <div style="margin-top: 30px; padding-top: 15px; border-top: 2px solid #ddd;">
+                        <div style="display: flex; justify-content: space-between;">
+                            <div style="flex: 1;">
+                                <div style="border-top: 1px solid #000; width: 80%; margin-top: 40px;"></div>
+                                <div style="font-size: 11px; margin-top: 5px;">
+                                    <strong>Firma del Inspector:</strong><br>
+                                    ${extintor.inspector || ''}<br>
+                                    ${extintor.cargo || ''}
+                                </div>
+                            </div>
+                            <div style="flex: 1; text-align: right;">
+                                <div style="border-top: 1px solid #000; width: 80%; margin-left: 20%; margin-top: 40px;"></div>
+                                <div style="font-size: 11px; margin-top: 5px;">
+                                    <strong>Firma del Supervisor:</strong><br>
+                                    <br>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div style="margin-top: 20px; font-size: 11px; color: #666;">
+                            <strong>Observaciones:</strong><br>
+                            <div style="min-height: 50px; border: 1px solid #ddd; border-radius: 3px; padding: 5px; margin-top: 5px;"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Pie de página -->
+                    <div style="margin-top: 30px; font-size: 9px; color: #999; text-align: center; border-top: 1px solid #eee; padding-top: 10px;">
+                        Documento generado automáticamente por el Sistema de Inspección de Extintores - CM SAN JUAN DE DIOS SJID
+                    </div>
+                </div>
+            `;
+        }
+
+        // Crear filas de inspección para el PDF
+        function createInspectionRows(extintor) {
+            const inspectionData = [
+                ['Tiene precinto y pasador', extintor.precinto],
+                ['Buena condición del cilindro', extintor.condicion],
+                ['Manguera ajustada', extintor.manguera],
+                ['Tobera y cinturón ajustado', extintor.tobera],
+                ['Señalización visible', extintor.senalizacion],
+                ['Instrucciones legibles', extintor.instrucciones],
+                ['Presión adecuada', extintor.presion],
+                ['Sin desgaste, óxido o fugas', extintor.desgaste],
+                ['Limpieza sin polvo o residuos', extintor.limpieza],
+                ['Peso del extintor', extintor.peso, false]
+            ];
+            
+            return inspectionData.map(item => {
+                const isCheck = item.length < 3 || item[2] !== false;
+                const value = item[1];
+                
+                if (isCheck) {
+                    const isChecked = value === true;
+                    return `
+                        <tr>
+                            <td style="padding: 6px; border: 1px solid #ddd;">${item[0]}</td>
+                            <td style="padding: 6px; border: 1px solid #ddd; text-align: center;">
+                                <span style="display: inline-block; width: 16px; height: 16px; border-radius: 50%; text-align: center; line-height: 16px; font-weight: bold; font-size: 12px; background-color: ${isChecked ? '#2ecc71' : '#e74c3c'}; color: white;">
+                                    ${isChecked ? '✓' : '✗'}
+                                </span>
+                            </td>
+                        </tr>
+                    `;
+                } else {
+                    return `
+                        <tr>
+                            <td style="padding: 6px; border: 1px solid #ddd; font-weight: bold;">${item[0]}</td>
+                            <td style="padding: 6px; border: 1px solid #ddd; text-align: center; font-weight: bold;">
+                                ${value || '-'}
+                            </td>
+                        </tr>
+                    `;
+                }
+            }).join('');
+        }
+
+        // Generar HTML para la matriz de agentes
+        function generateAgentMatrixHTML(extintor) {
+            let html = `
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 9px;">
+                        <thead>
+                            <tr>
+                                <th style="width: 120px; background: #2c3e50; color: white; padding: 6px; text-align: left;">Parámetro / Mes</th>
+                                <th style="min-width: 20px; background: #2c3e50; color: white; padding: 6px; text-align: center;">1</th>
+                                <th style="min-width: 20px; background: #2c3e50; color: white; padding: 6px; text-align: center;">2</th>
+                                <th style="min-width: 20px; background: #2c3e50; color: white; padding: 6px; text-align: center;">3</th>
+                                <th style="min-width: 20px; background: #2c3e50; color: white; padding: 6px; text-align: center;">4</th>
+                                <th style="min-width: 20px; background: #2c3e50; color: white; padding: 6px; text-align: center;">5</th>
+                                <th style="min-width: 20px; background: #2c3e50; color: white; padding: 6px; text-align: center;">6</th>
+                                <th style="min-width: 20px; background: #2c3e50; color: white; padding: 6px; text-align: center;">7</th>
+                                <th style="min-width: 20px; background: #2c3e50; color: white; padding: 6px; text-align: center;">8</th>
+                                <th style="min-width: 20px; background: #2c3e50; color: white; padding: 6px; text-align: center;">9</th>
+                                <th style="min-width: 20px; background: #2c3e50; color: white; padding: 6px; text-align: center;">10</th>
+                                <th style="min-width: 20px; background: #2c3e50; color: white; padding: 6px; text-align: center;">11</th>
+                                <th style="min-width: 20px; background: #2c3e50; color: white; padding: 6px; text-align: center;">12</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+            
+            parametros.forEach((param, i) => {
+                const hasAnyCheck = extintor.agentsMatrix[i] && 
+                                   extintor.agentsMatrix[i].some(cell => cell);
+                
+                if (hasAnyCheck) {
+                    html += '<tr>';
+                    html += `<td style="font-weight: bold; background: #f8f9fa; padding: 6px; border: 1px solid #ddd;">${i+1}. ${param}</td>`;
+                    
+                    for (let j = 0; j < 12; j++) {
+                        const checked = extintor.agentsMatrix[i] && extintor.agentsMatrix[i][j];
+                        html += `<td style="text-align: center; padding: 6px; border: 1px solid #ddd; background: ${checked ? '#e8f5e9' : 'white'}">`;
+                        html += checked ? 
+                            '<span style="color: #2ecc71; font-weight: bold;">✓</span>' : 
+                            '';
+                        html += '</td>';
+                    }
+                    
+                    html += '</tr>';
+                }
+            });
+            
+            html += `
+                        </tbody>
+                    </table>
+                </div>
+                <div style="font-size: 9px; color: #666; margin-top: 5px;">
+                    <span style="background: #e8f5e9; padding: 2px 5px; border-radius: 3px;">✓</span> = Parámetro verificado en el mes correspondiente
+                </div>
+            `;
+            
+            return html;
+        }
+
+        // PDF básico (fallback)
+        function generateBasicPDF(extintor) {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('p', 'mm', 'a4');
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const margin = 15;
+            let yPos = margin;
+            
+            // Encabezado
+            doc.setFontSize(16);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(44, 62, 80);
+            doc.text('REGISTRO DE INSPECCIÓN DE EXTINTORES PORTÁTILES', pageWidth / 2, yPos, { align: 'center' });
+            yPos += 8;
+            
+            doc.setFontSize(12);
+            doc.setTextColor(52, 152, 219);
+            doc.text('CM SAN JUAN DE DIOS - SJID', pageWidth / 2, yPos, { align: 'center' });
+            yPos += 15;
+            
+            // Información básica
+            doc.setFontSize(10);
+            doc.setTextColor(0, 0, 0);
+            doc.setFont('helvetica', 'normal');
+            
+            const infoLines = [
+                `N° de Extintor: ${extintor.numero || '-'}`,
+                `ID: ${extintor.extintorId || '-'}`,
+                `Área/Equipo: ${extintor.area || '-'}`,
+                `Ubicación: ${extintor.ubicacion || '-'}`,
+                `Inspector: ${extintor.inspector || '-'}`,
+                `Fecha: ${formatDate(extintor.fecha) || '-'}`
+            ];
+            
+            infoLines.forEach(line => {
+                if (yPos > 280) {
+                    doc.addPage();
+                    yPos = margin;
+                }
+                doc.text(line, margin, yPos);
+                yPos += 6;
+            });
+            
+            yPos += 10;
+            
+            // Tabla de estado (simplificada)
+            const estadoData = [
+                ['Precinto y pasador', extintor.precinto],
+                ['Condición del cilindro', extintor.condicion],
+                ['Manguera ajustada', extintor.manguera],
+                ['Tobera y cinturón', extintor.tobera],
+                ['Señalización visible', extintor.senalizacion],
+                ['Instrucciones legibles', extintor.instrucciones],
+                ['Presión adecuada', extintor.presion],
+                ['Sin desgaste/óxido', extintor.desgaste],
+                ['Limpieza', extintor.limpieza]
+            ];
+            
+            doc.setFont('helvetica', 'bold');
+            doc.text('Estado de Inspección:', margin, yPos);
+            yPos += 8;
+            
+            doc.setFont('helvetica', 'normal');
+            estadoData.forEach(item => {
+                if (yPos > 280) {
+                    doc.addPage();
+                    yPos = margin;
+                }
+                doc.text(`• ${item[0]}: ${item[1] ? '✓ Sí' : '✗ No'}`, margin, yPos);
+                yPos += 6;
+            });
+            
+            // Guardar PDF básico
+            const fileName = `Extintor_${extintor.numero}_${extintor.ubicacion}_${new Date().toISOString().split('T')[0]}.pdf`;
+            doc.save(fileName);
+            showNotification('PDF básico generado');
+        }
+
+        // Exportar todo el inventario a PDF mejorado
+        async function exportAllToPDF() {
+            if (inventory.length === 0) {
+                showNotification('No hay extintores registrados para exportar', 'warning');
+                return;
+            }
+            
+            const loading = showLoading('Generando reporte completo...');
+            
+            try {
+                await generateProfessionalInventoryPDF();
+            } catch (error) {
+                console.error('Error generando PDF del inventario:', error);
+                showNotification('Error al generar el PDF', 'error');
+                generateBasicInventoryPDF();
+            } finally {
+                hideLoading(loading);
+            }
+        }
+
+        // Generar PDF profesional del inventario
+        async function generateProfessionalInventoryPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('p', 'mm', 'a4');
+            
+            // Crear contenido HTML para el inventario
+            const pdfContent = createInventoryPDFContent();
+            
+            // Crear elemento temporal para html2canvas
+            const tempDiv = document.createElement('div');
+            tempDiv.style.position = 'absolute';
+            tempDiv.style.left = '-9999px';
+            tempDiv.style.top = '0';
+            tempDiv.style.width = '210mm';
+            tempDiv.style.background = 'white';
+            tempDiv.style.padding = '20px';
+            tempDiv.style.fontFamily = 'Arial, sans-serif';
+            tempDiv.innerHTML = pdfContent;
+            
+            document.body.appendChild(tempDiv);
+            
+            try {
+                const canvas = await html2canvas(tempDiv, {
+                    scale: 2,
+                    useCORS: true,
+                    logging: false,
+                    backgroundColor: '#ffffff',
+                    allowTaint: true
+                });
+                
+                const imgData = canvas.toDataURL('image/jpeg', 0.8);
+                const imgWidth = 190;
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                
+                // Agregar imagen al PDF
+                doc.addImage(imgData, 'JPEG', 10, 10, imgWidth, imgHeight);
+                
+                // Guardar PDF
+                const fileName = `Inventario_Completo_${new Date().toISOString().split('T')[0]}.pdf`;
+                doc.save(fileName);
+                
+                showNotification('Reporte completo generado');
+                
+            } finally {
+                document.body.removeChild(tempDiv);
+            }
+        }
+
+        // Crear contenido HTML para el PDF del inventario
+        function createInventoryPDFContent() {
+            const today = new Date().toLocaleDateString('es-ES');
+            const totalExtintores = inventory.length;
+            const activeExtintores = inventory.filter(ext => 
+                ext.precinto && ext.condicion && ext.manguera && ext.tobera && 
+                ext.senalizacion && ext.instrucciones && ext.presion && 
+                ext.desgaste && ext.limpieza
+            ).length;
+            
+            // Generar estadísticas por áreas
+            const areaStats = {};
+            inventory.forEach(ext => {
+                if (!areaStats[ext.area]) {
+                    areaStats[ext.area] = { total: 0, active: 0 };
+                }
+                areaStats[ext.area].total++;
+                
+                const isActive = ext.precinto && ext.condicion && ext.manguera && 
+                               ext.tobera && ext.senalizacion && ext.instrucciones && 
+                               ext.presion && ext.desgaste && ext.limpieza;
+                if (isActive) {
+                    areaStats[ext.area].active++;
+                }
+            });
+            
+            // Generar filas de la tabla
+            const tableRows = inventory.map(ext => {
+                const isActive = ext.precinto && ext.condicion && ext.manguera && 
+                               ext.tobera && ext.senalizacion && ext.instrucciones && 
+                               ext.presion && ext.desgaste && ext.limpieza;
+                return `
+                    <tr>
+                        <td style="padding: 6px; border: 1px solid #ddd; font-weight: bold;">${ext.numero}</td>
+                        <td style="padding: 6px; border: 1px solid #ddd;">${ext.extintorId}</td>
+                        <td style="padding: 6px; border: 1px solid #ddd;">${ext.ubicacion}</td>
+                        <td style="padding: 6px; border: 1px solid #ddd;">${ext.area}</td>
+                        <td style="padding: 6px; border: 1px solid #ddd;">${ext.tipo}</td>
+                        <td style="padding: 6px; border: 1px solid #ddd;">${formatDate(ext.fecha)}</td>
+                        <td style="padding: 6px; border: 1px solid #ddd; color: ${ext.proximaRecarga ? '#e74c3c' : '#666'}; font-weight: bold;">
+                            ${ext.proximaRecarga || '-'}
+                        </td>
+                        <td style="padding: 6px; border: 1px solid #ddd; text-align: center;">
+                            <span style="display: inline-block; padding: 3px 8px; border-radius: 12px; font-size: 10px; font-weight: bold; 
+                                  background: ${isActive ? '#d4edda' : '#f8d7da'}; 
+                                  color: ${isActive ? '#155724' : '#721c24'}">
+                                ${isActive ? 'OK' : 'REVISAR'}
+                            </span>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+            
+            // Generar estadísticas por áreas
+            let areaStatsHTML = '';
+            Object.entries(areaStats).forEach(([area, stats]) => {
+                const percentage = stats.total > 0 ? Math.round((stats.active / stats.total) * 100) : 0;
+                areaStatsHTML += `
+                    <div style="flex: 1; min-width: 180px; border: 1px solid #ddd; border-radius: 5px; padding: 10px; background: #f8f9fa; margin-bottom: 10px;">
+                        <div style="font-weight: bold; font-size: 12px; margin-bottom: 5px;">${area || 'Sin área'}</div>
+                        <div style="display: flex; justify-content: space-between; font-size: 11px;">
+                            <span>Total: ${stats.total}</span>
+                            <span>OK: ${stats.active}</span>
+                            <span style="color: ${percentage >= 80 ? '#28a745' : percentage >= 60 ? '#ffc107' : '#dc3545'}; font-weight: bold;">
+                                ${percentage}%
+                            </span>
+                        </div>
+                        <div style="margin-top: 5px; height: 8px; background: #e9ecef; border-radius: 4px; overflow: hidden;">
+                            <div style="height: 100%; width: ${percentage}%; background: ${percentage >= 80 ? '#28a745' : percentage >= 60 ? '#ffc107' : '#dc3545'};"></div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            return `
+                <div style="font-family: Arial, sans-serif; width: 100%;">
+                    <!-- Encabezado -->
+                    <div style="text-align: center; margin-bottom: 25px; border-bottom: 3px solid #2c3e50; padding-bottom: 15px;">
+                        <div style="font-size: 22px; font-weight: bold; color: #2c3e50; margin: 0;">
+                            INVENTARIO COMPLETO DE EXTINTORES
+                        </div>
+                        <div style="font-size: 16px; font-weight: bold; color: #3498db; margin: 8px 0 0 0;">
+                            CM SAN JUAN DE DIOS - SJID
+                        </div>
+                        <div style="margin-top: 10px; font-size: 12px; color: #666;">
+                            Fecha del reporte: ${today} | 
+                            Total de extintores: ${totalExtintores} | 
+                            En buen estado: ${activeExtintores}
+                        </div>
+                    </div>
+                    
+                    <!-- Estadísticas -->
+                    <div style="display: flex; justify-content: space-around; margin-bottom: 25px; gap: 15px; flex-wrap: wrap;">
+                        <div style="flex: 1; min-width: 180px; background: linear-gradient(135deg, #3498db, #2980b9); color: white; padding: 15px; border-radius: 8px; text-align: center;">
+                            <div style="font-size: 28px; font-weight: bold; margin: 10px 0;">${totalExtintores}</div>
+                            <div style="font-size: 12px;">Total Extintores</div>
+                        </div>
+                        <div style="flex: 1; min-width: 180px; background: linear-gradient(135deg, #2ecc71, #27ae60); color: white; padding: 15px; border-radius: 8px; text-align: center;">
+                            <div style="font-size: 28px; font-weight: bold; margin: 10px 0;">${activeExtintores}</div>
+                            <div style="font-size: 12px;">En Buen Estado</div>
+                        </div>
+                        <div style="flex: 1; min-width: 180px; background: linear-gradient(135deg, #e74c3c, #c0392b); color: white; padding: 15px; border-radius: 8px; text-align: center;">
+                            <div style="font-size: 28px; font-weight: bold; margin: 10px 0;">${totalExtintores - activeExtintores}</div>
+                            <div style="font-size: 12px;">Requieren Atención</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Listado de extintores -->
+                    <div style="margin-bottom: 25px;">
+                        <h3 style="margin-top: 0; color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 5px; font-size: 16px;">
+                            📋 Listado de Extintores
+                        </h3>
+                        <div style="overflow-x: auto;">
+                            <table style="width: 100%; border-collapse: collapse; font-size: 9px;">
+                                <thead>
+                                    <tr>
+                                        <th style="background: #2c3e50; color: white; padding: 8px; text-align: left;">N°</th>
+                                        <th style="background: #2c3e50; color: white; padding: 8px; text-align: left;">ID</th>
+                                        <th style="background: #2c3e50; color: white; padding: 8px; text-align: left;">Ubicación</th>
+                                        <th style="background: #2c3e50; color: white; padding: 8px; text-align: left;">Área</th>
+                                        <th style="background: #2c3e50; color: white; padding: 8px; text-align: left;">Tipo</th>
+                                        <th style="background: #2c3e50; color: white; padding: 8px; text-align: left;">Última Inspección</th>
+                                        <th style="background: #2c3e50; color: white; padding: 8px; text-align: left;">Próxima Recarga</th>
+                                        <th style="background: #2c3e50; color: white; padding: 8px; text-align: left;">Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${tableRows}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- Distribución por áreas -->
+                    <div style="margin-bottom: 25px;">
+                        <h3 style="margin-top: 0; color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 5px; font-size: 16px;">
+                            📊 Distribución por Áreas
+                        </h3>
+                        <div style="display: flex; flex-wrap: wrap; gap: 15px; margin-top: 10px;">
+                            ${areaStatsHTML}
+                        </div>
+                    </div>
+                    
+                    <!-- Pie de página -->
+                    <div style="margin-top: 30px; font-size: 9px; color: #999; text-align: center; border-top: 1px solid #eee; padding-top: 10px;">
+                        Documento generado automáticamente por el Sistema de Inspección de Extintores - CM SAN JUAN DE DIOS SJID
+                    </div>
+                </div>
+            `;
+        }
+
+        // PDF básico del inventario (fallback)
+        function generateBasicInventoryPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('p', 'mm', 'a4');
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const margin = 15;
+            let yPos = margin;
+            
+            // Título
+            doc.setFontSize(16);
+            doc.setFont('helvetica', 'bold');
+            doc.text('INVENTARIO DE EXTINTORES', pageWidth / 2, yPos, { align: 'center' });
+            yPos += 10;
+            
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'normal');
+            doc.text('CM SAN JUAN DE DIOS - SJID', pageWidth / 2, yPos, { align: 'center' });
+            yPos += 15;
+            
+            // Crear tabla con autotable
+            const tableData = inventory.map(ext => {
+                const status = ext.precinto && ext.condicion && ext.manguera && ext.tobera && 
+                             ext.senalizacion && ext.instrucciones && ext.presion && 
+                             ext.desgaste && ext.limpieza ? 'OK' : 'Revisar';
+                
+                return [
+                    ext.numero,
+                    ext.extintorId,
+                    ext.ubicacion,
+                    ext.area,
+                    ext.tipo,
+                    formatDate(ext.fecha),
+                    ext.proximaRecarga,
+                    status
+                ];
+            });
+            
+            doc.autoTable({
+                startY: yPos,
+                head: [['N°', 'ID', 'Ubicación', 'Área', 'Tipo', 'Última Inspección', 'Próxima Recarga', 'Estado']],
+                body: tableData,
+                margin: { left: margin, right: margin },
+                styles: { fontSize: 8, cellPadding: 3 },
+                headStyles: { fillColor: [44, 62, 80], textColor: 255, fontStyle: 'bold' },
+                alternateRowStyles: { fillColor: [245, 245, 245] }
+            });
+            
+            // Guardar PDF
+            const fileName = `Inventario_Extintores_${new Date().toISOString().split('T')[0]}.pdf`;
+            doc.save(fileName);
+            showNotification('Reporte básico generado');
+        }
+
+        // Imprimir vista actual
+        function printView() {
+            window.print();
+            showNotification('Preparando impresión...');
+        }
+        // ==============================================
+// FUNCIÓN PARA SINCRONIZAR TODOS LOS EXTINTORES
+// ==============================================
+
+function sincronizarTodosLosExtintores() {
+    const loading = showLoading('Sincronizando todos los extintores...');
+    
+    let sincronizados = 0;
+    let errores = 0;
+    
+    // Array con ubicaciones y áreas para cada extintor
+    const ubicaciones = [
+        "Pasillo Principal - Planta Baja", "Pasillo Principal - Primer Piso", "Pasillo Principal - Segundo Piso",
+        "Recepción Principal", "Sala de Espera", "Cocina Principal", "Cocina de Dietas", "Quirófano 1",
+        "Quirófano 2", "Quirófano 3", "Sala de Recuperación", "Laboratorio Clínico", "Farmacia",
+        "Archivo Médico", "Administración", "Contabilidad", "Sala de Servidores", "Cuarto de Máquinas",
+        "Estacionamiento - Nivel 1", "Estacionamiento - Nivel 2", "Entrada Principal", "Salida de Emergencia A",
+        "Salida de Emergencia B", "Sala de Rayos X", "Sala de Tomografía", "Unidad de Cuidados Intensivos",
+        "Emergencias", "Pediatría", "Maternidad", "Cirugía", "Medicina Interna", "Psiquiatría",
+        "Fisioterapia", "Almacén General", "Lavandería"
+    ];
+    
+    const areas = [
+        "Administración", "Cirugía", "Pediatría", "Maternidad", "Emergencias", "UCI", "Laboratorio",
+        "Farmacia", "Cocina", "Lavandería", "Mantenimiento", "Estacionamiento", "Archivo", "Rayos X",
+        "Quirófano", "Recuperación", "Recepción", "Sala de Espera", "Psiquiatría", "Fisioterapia",
+        "Almacén", "Servidores", "Máquinas", "Contabilidad", "Enfermería", "Medicina Interna",
+        "Cardiología", "Neurología", "Oftalmología", "Dermatología", "Ortopedia", "Traumatología",
+        "Oncología", "Nefrología", "Endocrinología"
+    ];
+    
+    // Recorrer todos los extintores
+    for (let i = 1; i <= 35; i++) {
+        const numStr = i.toString().padStart(3, '0');
+        const idExtintor = `EXT${numStr}`;
+        
+        try {
+            // Cargar inventario existente
+            let inventario = JSON.parse(localStorage.getItem('extintorInventory') || '[]');
+            
+            // Verificar si ya existe
+            const existe = inventario.some(ext => 
+                ext.extintorId === idExtintor || ext.numero === idExtintor
+            );
+            
+            if (!existe) {
+                // Crear datos por defecto
+                const ubicacionIndex = (i - 1) % ubicaciones.length;
+                const areaIndex = (i - 1) % areas.length;
+                
+                const extintorNuevo = {
+                    id: idExtintor,
+                    numero: idExtintor,
+                    extintorId: idExtintor,
+                    ubicacion: ubicaciones[ubicacionIndex],
+                    area: areas[areaIndex],
+                    tipo: i % 4 === 0 ? 'Agua' : i % 4 === 1 ? 'CO2' : i % 4 === 2 ? 'Polvo Químico' : 'Espuma',
+                    peso: i % 6 === 0 ? '2 kg' : i % 6 === 1 ? '3 kg' : i % 6 === 2 ? '5 kg' : 
+                          i % 6 === 3 ? '6 kg' : i % 6 === 4 ? '9 kg' : '12 kg',
+                    fecha: new Date().toISOString().split('T')[0],
+                    inspector: 'Sistema Automático',
+                    cargo: 'Administrador',
+                    fechaRecarga: new Date(new Date().getFullYear() - 1, 0, 15).toISOString().split('T')[0],
+                    proximaRecarga: new Date(new Date().getFullYear() + 1, 0, 15).toISOString().split('T')[0],
+                    precinto: true,
+                    condicion: true,
+                    manguera: true,
+                    tobera: true,
+                    senalizacion: true,
+                    instrucciones: true,
+                    presion: true,
+                    desgaste: true,
+                    limpieza: true,
+                    agentsMatrix: Array(17).fill().map(() => Array(12).fill(false)),
+                    imagen: '',
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                };
+                
+                inventario.push(extintorNuevo);
+                sincronizados++;
+            }
+            
+        } catch (error) {
+            console.error(`Error sincronizando extintor ${numStr}:`, error);
+            errores++;
+        }
+    }
+    
+    // Guardar inventario actualizado
+    if (sincronizados > 0) {
+        localStorage.setItem('extintorInventory', JSON.stringify(inventario));
+        saveInventory(); // Llama a la función que actualiza estadísticas
+        renderInventoryTable();
+        
+        showNotification(`${sincronizados} extintores sincronizados ${errores > 0 ? `(con ${errores} errores)` : ''}`);
+    } else {
+        showNotification('Todos los extintores ya estaban sincronizados', 'warning');
+    }
+    
+    hideLoading(loading);
+}
+
+// Agrega un botón en la navegación para sincronizar
+function agregarBotonSincronizar() {
+    const navButtons = document.querySelector('.nav-buttons');
+    if (navButtons) {
+        const botonSincronizar = document.createElement('button');
+        botonSincronizar.className = 'nav-btn warning';
+        botonSincronizar.id = 'syncAllBtn';
+        botonSincronizar.textContent = '🔄 Sincronizar Todos';
+        botonSincronizar.onclick = function() {
+            if (confirm('¿Sincronizar todos los extintores (001-035)?\n\nEsto creará datos por defecto para los que no existen.')) {
+                sincronizarTodosLosExtintores();
+            }
+        };
+        
+        navButtons.appendChild(botonSincronizar);
+    }
+}
+
+// Llama a esta función en la inicialización
+document.addEventListener('DOMContentLoaded', function() {
+    // ... código existente ...
+    agregarBotonSincronizar();
+    // ... resto del código ...
+});
+
+
+    </script>
+</body>
+</html>
